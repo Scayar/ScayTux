@@ -40,6 +40,18 @@ def set_api_client(client: TuxAPIClient):
 # Helper Functions
 # ==========================================
 
+def escape_markdown(text: str) -> str:
+    """Escape special Markdown characters for Telegram."""
+    if text is None:
+        return "?"
+    if not isinstance(text, str):
+        text = str(text)
+    escape_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    for char in escape_chars:
+        text = text.replace(char, f'\\{char}')
+    return text
+
+
 def format_result(result: dict) -> str:
     """Format API result for display."""
     if result.get("success"):
@@ -133,21 +145,27 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = await api_client.get_status()
     
     if "connected" in result:
+        driver_type = escape_markdown(result.get('driver_type', 'unknown'))
         status_text = f"""
 📊 *TUX Droid Status*
 
 • Connected: {'✅ Yes' if result.get('connected') else '❌ No'}
-• Driver: {result.get('driver_type', 'unknown')}
+• Driver: {driver_type}
 • Mode: {'🧪 Mock' if result.get('driver_type') == 'mock' else '🔧 Hardware'}
 """
         if result.get("simulated_state"):
             state = result["simulated_state"]
+            eyes = escape_markdown(state.get('eyes', 'unknown'))
+            mouth = escape_markdown(state.get('mouth', 'unknown'))
+            wings = escape_markdown(state.get('wings', 'unknown'))
+            leds_left = escape_markdown(state.get('leds_left', '?'))
+            leds_right = escape_markdown(state.get('leds_right', '?'))
             status_text += f"""
 *Simulated State:*
-• Eyes: {state.get('eyes', 'unknown')}
-• Mouth: {state.get('mouth', 'unknown')}
-• Wings: {state.get('wings', 'unknown')}
-• LEDs: L={state.get('leds_left', '?')} R={state.get('leds_right', '?')}
+• Eyes: {eyes}
+• Mouth: {mouth}
+• Wings: {wings}
+• LEDs: L={leds_left} R={leds_right}
 """
     else:
         status_text = format_result(result)
@@ -320,10 +338,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         status_text = "📊 *TUX Status*\n\n"
         if "connected" in result:
             status_text += f"Connected: {'✅' if result.get('connected') else '❌'}\n"
-            status_text += f"Driver: {result.get('driver_type', '?')}\n"
+            status_text += f"Driver: {escape_markdown(result.get('driver_type', '?'))}\n"
             if result.get("simulated_state"):
                 state = result["simulated_state"]
-                status_text += f"\n*State:* Eyes={state.get('eyes')}, Mouth={state.get('mouth')}"
+                eyes = escape_markdown(state.get('eyes', '?'))
+                mouth = escape_markdown(state.get('mouth', '?'))
+                status_text += f"\n*State:* Eyes={eyes}, Mouth={mouth}"
         else:
             status_text += format_result(result)
         
