@@ -5,7 +5,13 @@ TUX Droid AI Control - Driver Interface
 This module defines the abstract driver interface and real USB driver
 for communicating with TUX Droid hardware.
 
-The TUX Droid uses a USB dongle (fuxusb) that communicates via HID protocol.
+The TUX Droid uses a USB dongle (fish dongle / fuxusb) that communicates 
+via USB HID protocol.
+
+Device: Atmel Corp. Tux Droid fish dongle
+Vendor ID: 0x03eb
+Product ID: 0xff07
+
 Commands are 4 bytes each (CMD_SIZE = 4 from firmware).
 """
 
@@ -19,20 +25,15 @@ from .actions import TuxAction, ActionType, FIRMWARE_COMMANDS
 logger = logging.getLogger(__name__)
 
 # TUX Droid USB identifiers
-# The dongle uses FTDI chip or custom USB implementation
-# Common vendor IDs to check:
-TUX_USB_IDENTIFIERS = [
-    # Format: (vendor_id, product_id, name)
-    (0x0403, 0x6001, "FTDI FT232R"),  # Common FTDI chip
-    (0x0403, 0x6010, "FTDI FT2232"),
-    (0x0403, 0x6014, "FTDI FT232H"),
-    (0x2341, 0x0043, "Arduino Uno"),  # In case using Arduino
-    (0x1A86, 0x7523, "CH340"),  # Chinese USB-Serial chip
-    (0x10C4, 0xEA60, "CP210x"),  # Silicon Labs
-]
+TUX_VENDOR_ID = 0x03eb   # Atmel Corp
+TUX_PRODUCT_ID = 0xff07  # Tux Droid fish dongle
 
 # Command size from firmware (defines.h)
 CMD_SIZE = 4
+
+# USB Endpoints (typical HID)
+USB_ENDPOINT_OUT = 0x02  # Write endpoint
+USB_ENDPOINT_IN = 0x81   # Read endpoint (0x80 | 1)
 
 
 class TuxDriverInterface(ABC):
@@ -112,214 +113,208 @@ class TuxDriverInterface(ABC):
 
 class TuxDriver(TuxDriverInterface):
     """
-    Real TUX Droid driver implementation.
+    Real TUX Droid driver implementation using USB HID.
     
     This driver communicates with the actual TUX Droid hardware
-    via USB serial connection using pyserial.
+    via USB using the pyusb library.
     
-    The TUX Droid dongle (fuxusb) typically appears as a serial device
-    at /dev/ttyUSB0 on Linux.
+    The TUX Droid fish dongle uses:
+    - Vendor ID: 0x03eb (Atmel)
+    - Product ID: 0xff07
     """
-    
-    # Serial communication settings
-    BAUDRATE = 115200
-    TIMEOUT = 1.0
-    WRITE_TIMEOUT = 1.0
     
     def __init__(self, device_path: str = "/dev/ttyUSB0"):
         """
         Initialize the TUX driver.
         
         Args:
-            device_path: Path to the USB device (e.g., /dev/ttyUSB0)
+            device_path: Legacy parameter (not used for USB HID)
         """
         self.device_path = device_path
         self._connected = False
-        self._serial = None
+        self._device = None
+        self._endpoint_out = None
+        self._endpoint_in = None
         self._last_error: Optional[str] = None
         self._commands_sent = 0
         self._commands_failed = 0
+        self._kernel_driver_detached = False
         
         logger.info("=" * 60)
-        logger.info("TuxDriver Initialization")
+        logger.info("TuxDriver Initialization (USB HID Mode)")
         logger.info("=" * 60)
-        logger.info(f"Device path: {device_path}")
-        logger.info(f"Baudrate: {self.BAUDRATE}")
-        logger.info(f"Timeout: {self.TIMEOUT}s")
+        logger.info(f"Target device: Atmel Tux Droid fish dongle")
+        logger.info(f"Vendor ID:  0x{TUX_VENDOR_ID:04X}")
+        logger.info(f"Product ID: 0x{TUX_PRODUCT_ID:04X}")
         logger.info("=" * 60)
     
-    def _find_tux_device(self) -> Optional[str]:
+    def _find_tux_device(self):
         """
-        Try to find TUX Droid USB device automatically.
+        Find the TUX Droid USB device.
         
         Returns:
-            str or None: Device path if found, None otherwise
+            USB device object or None
         """
-        import os
-        import glob
-        
-        logger.info("🔍 Searching for TUX Droid USB device...")
-        
-        # Check common USB serial device paths
-        possible_paths = [
-            "/dev/ttyUSB*",
-            "/dev/ttyACM*",
-            "/dev/serial/by-id/*",
-        ]
-        
-        found_devices = []
-        for pattern in possible_paths:
-            devices = glob.glob(pattern)
-            found_devices.extend(devices)
-        
-        if found_devices:
-            logger.info(f"📋 Found USB serial devices: {found_devices}")
-            # Return the first ttyUSB device as most likely
-            for dev in found_devices:
-                if "ttyUSB" in dev:
-                    logger.info(f"✅ Selected device: {dev}")
-                    return dev
-            # Fall back to first device
-            logger.info(f"✅ Selected device: {found_devices[0]}")
-            return found_devices[0]
-        
-        logger.warning("❌ No USB serial devices found!")
-        return None
-    
-    def _list_usb_devices(self) -> List[Dict[str, Any]]:
-        """
-        List all USB devices for debugging.
-        
-        Returns:
-            list: List of USB device info dictionaries
-        """
-        devices = []
-        
         try:
             import usb.core
             import usb.util
             
-            logger.info("🔍 Scanning USB devices with pyusb...")
+            logger.info("🔍 Searching for TUX Droid USB device...")
             
+            # Find TUX device by vendor/product ID
+            device = usb.core.find(idVendor=TUX_VENDOR_ID, idProduct=TUX_PRODUCT_ID)
+            
+            if device is not None:
+                logger.info(f"✅ Found TUX Droid!")
+                logger.info(f"   Bus: {device.bus}")
+                logger.info(f"   Address: {device.address}")
+                try:
+                    manufacturer = usb.util.get_string(device, device.iManufacturer)
+                    product = usb.util.get_string(device, device.iProduct)
+                    logger.info(f"   Manufacturer: {manufacturer}")
+                    logger.info(f"   Product: {product}")
+                except:
+                    pass
+                return device
+            else:
+                logger.warning("❌ TUX Droid device not found!")
+                self._list_usb_devices()
+                return None
+                
+        except ImportError:
+            logger.error("❌ pyusb not installed. Run: pip install pyusb")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Error finding device: {e}")
+            return None
+    
+    def _list_usb_devices(self):
+        """List all USB devices for debugging."""
+        try:
+            import usb.core
+            import usb.util
+            
+            logger.info("\n📋 Available USB devices:")
             for device in usb.core.find(find_all=True):
                 try:
-                    device_info = {
-                        "vendor_id": hex(device.idVendor),
-                        "product_id": hex(device.idProduct),
-                        "manufacturer": usb.util.get_string(device, device.iManufacturer) if device.iManufacturer else "Unknown",
-                        "product": usb.util.get_string(device, device.iProduct) if device.iProduct else "Unknown",
-                    }
-                    devices.append(device_info)
-                    logger.debug(f"  Found: {device_info}")
-                except Exception as e:
-                    # Some devices may not be readable
-                    devices.append({
-                        "vendor_id": hex(device.idVendor),
-                        "product_id": hex(device.idProduct),
-                        "error": str(e)
-                    })
-            
-            logger.info(f"📋 Total USB devices found: {len(devices)}")
-            
-        except ImportError:
-            logger.warning("⚠️ pyusb not installed. Run: pip install pyusb")
+                    vid = f"0x{device.idVendor:04X}"
+                    pid = f"0x{device.idProduct:04X}"
+                    try:
+                        product = usb.util.get_string(device, device.iProduct) or "Unknown"
+                    except:
+                        product = "Unknown"
+                    logger.info(f"   VID:{vid} PID:{pid} - {product}")
+                except:
+                    pass
         except Exception as e:
-            logger.error(f"❌ Error scanning USB devices: {e}")
-        
-        return devices
+            logger.debug(f"Could not list USB devices: {e}")
     
     def connect(self) -> bool:
         """
-        Establish connection to TUX Droid via USB serial.
+        Establish connection to TUX Droid via USB.
         
         Returns:
             bool: True if connection successful, False otherwise
         """
         logger.info("=" * 60)
-        logger.info("🐧 TUX DROID CONNECTION ATTEMPT")
+        logger.info("🐧 TUX DROID USB CONNECTION ATTEMPT")
         logger.info("=" * 60)
         
-        # List USB devices for debugging
-        usb_devices = self._list_usb_devices()
+        try:
+            import usb.core
+            import usb.util
+        except ImportError:
+            self._last_error = "pyusb not installed. Run: pip install pyusb"
+            logger.error(f"❌ {self._last_error}")
+            return False
         
-        # Try to find device if path doesn't exist
-        import os
-        if not os.path.exists(self.device_path):
-            logger.warning(f"⚠️ Configured device {self.device_path} not found!")
-            found_device = self._find_tux_device()
-            if found_device:
-                logger.info(f"🔄 Using auto-detected device: {found_device}")
-                self.device_path = found_device
-            else:
-                self._last_error = f"Device {self.device_path} not found and no alternative detected"
-                logger.error(f"❌ {self._last_error}")
-                logger.error("")
-                logger.error("🔧 TROUBLESHOOTING:")
-                logger.error("   1. Check if TUX dongle is plugged in: lsusb")
-                logger.error("   2. Check serial devices: ls -la /dev/ttyUSB*")
-                logger.error("   3. Add user to dialout group: sudo usermod -a -G dialout $USER")
-                logger.error("   4. Set device permissions: sudo chmod 666 /dev/ttyUSB0")
-                logger.error("")
-                return False
+        # Find device
+        self._device = self._find_tux_device()
+        if self._device is None:
+            self._last_error = "TUX Droid device not found"
+            logger.error(f"❌ {self._last_error}")
+            logger.error("")
+            logger.error("🔧 TROUBLESHOOTING:")
+            logger.error("   1. Check if TUX dongle is plugged in: lsusb")
+            logger.error("   2. Look for: 03eb:ff07 Atmel Corp. Tux Droid fish dongle")
+            logger.error("   3. Try unplugging and replugging the dongle")
+            logger.error("")
+            return False
         
         try:
-            import serial
+            # Detach kernel driver if attached
+            if self._device.is_kernel_driver_active(0):
+                logger.info("📤 Detaching kernel driver...")
+                try:
+                    self._device.detach_kernel_driver(0)
+                    self._kernel_driver_detached = True
+                    logger.info("   ✅ Kernel driver detached")
+                except usb.core.USBError as e:
+                    logger.warning(f"   ⚠️ Could not detach kernel driver: {e}")
             
-            logger.info(f"📡 Opening serial connection to {self.device_path}...")
-            logger.info(f"   Baudrate: {self.BAUDRATE}")
-            logger.info(f"   Timeout: {self.TIMEOUT}s")
+            # Set configuration
+            logger.info("📝 Setting USB configuration...")
+            try:
+                self._device.set_configuration()
+                logger.info("   ✅ Configuration set")
+            except usb.core.USBError as e:
+                # May already be configured
+                logger.debug(f"   Configuration note: {e}")
             
-            self._serial = serial.Serial(
-                port=self.device_path,
-                baudrate=self.BAUDRATE,
-                timeout=self.TIMEOUT,
-                write_timeout=self.WRITE_TIMEOUT,
-                bytesize=serial.EIGHTBITS,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
+            # Get configuration and interface
+            cfg = self._device.get_active_configuration()
+            intf = cfg[(0, 0)]
+            
+            logger.info(f"📋 Interface: {intf}")
+            
+            # Find endpoints
+            self._endpoint_out = usb.util.find_descriptor(
+                intf,
+                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
             )
             
-            # Give device time to initialize
-            time.sleep(0.5)
+            self._endpoint_in = usb.util.find_descriptor(
+                intf,
+                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
+            )
             
-            # Clear any pending data
-            self._serial.reset_input_buffer()
-            self._serial.reset_output_buffer()
+            if self._endpoint_out is None:
+                # Try using control transfer instead
+                logger.info("   ℹ️ No OUT endpoint found, will use control transfers")
+            else:
+                logger.info(f"   ✅ OUT endpoint: 0x{self._endpoint_out.bEndpointAddress:02X}")
+            
+            if self._endpoint_in is not None:
+                logger.info(f"   ✅ IN endpoint: 0x{self._endpoint_in.bEndpointAddress:02X}")
             
             self._connected = True
             self._last_error = None
             
             logger.info("=" * 60)
             logger.info("✅ SUCCESSFULLY CONNECTED TO TUX DROID!")
-            logger.info(f"   Device: {self.device_path}")
-            logger.info(f"   Port open: {self._serial.is_open}")
             logger.info("=" * 60)
             
-            # Send a test ping command
+            # Send initial ping
             self._send_ping()
             
             return True
             
-        except ImportError:
-            self._last_error = "pyserial not installed. Run: pip install pyserial"
+        except usb.core.USBError as e:
+            self._last_error = f"USB error: {e}"
             logger.error(f"❌ {self._last_error}")
-            return False
             
-        except serial.SerialException as e:
-            self._last_error = f"Serial error: {e}"
-            logger.error(f"❌ {self._last_error}")
-            logger.error("")
-            logger.error("🔧 TROUBLESHOOTING:")
-            if "Permission denied" in str(e):
-                logger.error("   Permission issue detected!")
-                logger.error("   Run: sudo usermod -a -G dialout $USER")
-                logger.error("   Then logout and login again.")
-                logger.error("   Or temporarily: sudo chmod 666 " + self.device_path)
-            elif "No such file" in str(e):
-                logger.error("   Device not found!")
-                logger.error("   Check: ls -la /dev/ttyUSB*")
-                logger.error("   Make sure TUX dongle is plugged in.")
-            logger.error("")
+            if "Access denied" in str(e) or "Permission" in str(e):
+                logger.error("")
+                logger.error("🔧 PERMISSION FIX:")
+                logger.error("   Option 1 - Create udev rule (recommended):")
+                logger.error('   echo \'SUBSYSTEM=="usb", ATTR{idVendor}=="03eb", ATTR{idProduct}=="ff07", MODE="0666"\' | sudo tee /etc/udev/rules.d/99-tuxdroid.rules')
+                logger.error("   sudo udevadm control --reload-rules")
+                logger.error("   sudo udevadm trigger")
+                logger.error("")
+                logger.error("   Option 2 - Run with sudo (not recommended):")
+                logger.error("   sudo python -m backend.main")
+                logger.error("")
+            
             return False
             
         except Exception as e:
@@ -336,39 +331,135 @@ class TuxDriver(TuxDriverInterface):
             ping_cmd = bytes([0x7F, 0x01, 0x00, 0x00])
             logger.info(f"📤 Sending PING command: {ping_cmd.hex()}")
             
-            if self._serial and self._serial.is_open:
-                self._serial.write(ping_cmd)
-                self._serial.flush()
+            result = self._usb_write(ping_cmd)
+            if result:
+                logger.info("   ✅ PING sent successfully")
                 
-                # Wait for response
-                time.sleep(0.1)
-                
-                if self._serial.in_waiting > 0:
-                    response = self._serial.read(self._serial.in_waiting)
-                    logger.info(f"📥 PING response: {response.hex()}")
-                    return True
+                # Try to read response
+                response = self._usb_read(timeout=500)
+                if response:
+                    logger.info(f"📥 PING response: {response.hex() if isinstance(response, bytes) else response}")
                 else:
-                    logger.info("📥 No PING response (TUX may not support ping)")
-                    return True  # Continue anyway
-                    
+                    logger.info("📥 No PING response (may be normal)")
+            
+            return result
+            
         except Exception as e:
             logger.warning(f"⚠️ PING failed: {e}")
+            return False
+    
+    def _usb_write(self, data: bytes) -> bool:
+        """
+        Write data to TUX via USB.
         
-        return False
+        Args:
+            data: Bytes to write
+            
+        Returns:
+            bool: True if successful
+        """
+        if not self._device:
+            return False
+        
+        try:
+            import usb.core
+            
+            # Pad to CMD_SIZE
+            padded_data = data.ljust(CMD_SIZE, b'\x00')[:CMD_SIZE]
+            
+            if self._endpoint_out:
+                # Use bulk/interrupt transfer
+                bytes_written = self._endpoint_out.write(padded_data, timeout=1000)
+                logger.debug(f"   Written {bytes_written} bytes via endpoint")
+            else:
+                # Use control transfer (HID SET_REPORT)
+                # bmRequestType: 0x21 (Host to Device, Class, Interface)
+                # bRequest: 0x09 (SET_REPORT)
+                # wValue: 0x0200 (Report Type: Output, Report ID: 0)
+                # wIndex: 0 (Interface)
+                bytes_written = self._device.ctrl_transfer(
+                    bmRequestType=0x21,  # Host to device, class, interface
+                    bRequest=0x09,       # SET_REPORT
+                    wValue=0x0200,       # Output report
+                    wIndex=0,            # Interface 0
+                    data_or_wLength=padded_data,
+                    timeout=1000
+                )
+                logger.debug(f"   Written {bytes_written} bytes via control transfer")
+            
+            return True
+            
+        except usb.core.USBError as e:
+            logger.error(f"   USB write error: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"   Write error: {e}")
+            return False
+    
+    def _usb_read(self, timeout: int = 1000) -> Optional[bytes]:
+        """
+        Read data from TUX via USB.
+        
+        Args:
+            timeout: Timeout in milliseconds
+            
+        Returns:
+            bytes or None
+        """
+        if not self._device:
+            return None
+        
+        try:
+            import usb.core
+            
+            if self._endpoint_in:
+                data = self._endpoint_in.read(64, timeout=timeout)
+                return bytes(data)
+            else:
+                # Use control transfer (HID GET_REPORT)
+                data = self._device.ctrl_transfer(
+                    bmRequestType=0xA1,  # Device to host, class, interface
+                    bRequest=0x01,       # GET_REPORT
+                    wValue=0x0100,       # Input report
+                    wIndex=0,
+                    data_or_wLength=64,
+                    timeout=timeout
+                )
+                return bytes(data)
+                
+        except Exception as e:
+            logger.debug(f"   Read timeout or error: {e}")
+            return None
     
     def disconnect(self) -> bool:
         """Disconnect from TUX Droid."""
         logger.info("🔌 Disconnecting from TUX Droid...")
         
         try:
-            if self._serial and self._serial.is_open:
-                self._serial.close()
-                logger.info("✅ Serial port closed")
+            import usb.util
+            
+            if self._device:
+                # Release interface
+                try:
+                    usb.util.dispose_resources(self._device)
+                except:
+                    pass
+                
+                # Reattach kernel driver if we detached it
+                if self._kernel_driver_detached:
+                    try:
+                        self._device.attach_kernel_driver(0)
+                        logger.info("   ✅ Kernel driver reattached")
+                    except:
+                        pass
             
             self._connected = False
-            self._serial = None
+            self._device = None
+            self._endpoint_out = None
+            self._endpoint_in = None
             
             logger.info(f"📊 Session stats: {self._commands_sent} commands sent, {self._commands_failed} failed")
+            logger.info("✅ Disconnected from TUX Droid")
             
             return True
             
@@ -379,12 +470,7 @@ class TuxDriver(TuxDriverInterface):
     
     def is_connected(self) -> bool:
         """Check if connected to TUX Droid."""
-        if self._serial is None:
-            return False
-        try:
-            return self._serial.is_open
-        except:
-            return False
+        return self._connected and self._device is not None
     
     def send_command(self, command: bytes) -> bool:
         """
@@ -410,23 +496,16 @@ class TuxDriver(TuxDriverInterface):
             logger.debug(f"📤 Sending command: {padded_command.hex()}")
             logger.debug(f"   Raw bytes: {list(padded_command)}")
             
-            # Write command
-            bytes_written = self._serial.write(padded_command)
-            self._serial.flush()
+            result = self._usb_write(padded_command)
             
-            logger.debug(f"   Bytes written: {bytes_written}")
+            if result:
+                self._commands_sent += 1
+                # Small delay to let TUX process
+                time.sleep(0.05)
+            else:
+                self._commands_failed += 1
             
-            self._commands_sent += 1
-            
-            # Small delay to let TUX process
-            time.sleep(0.05)
-            
-            # Check for any response (optional)
-            if self._serial.in_waiting > 0:
-                response = self._serial.read(self._serial.in_waiting)
-                logger.debug(f"📥 Response: {response.hex()}")
-            
-            return True
+            return result
             
         except Exception as e:
             self._last_error = f"Send command failed: {e}"
@@ -537,11 +616,12 @@ class TuxDriver(TuxDriverInterface):
         return {
             "connected": self.is_connected(),
             "device_path": self.device_path,
-            "driver_type": "hardware",
+            "driver_type": "hardware_usb",
+            "usb_vendor_id": f"0x{TUX_VENDOR_ID:04X}",
+            "usb_product_id": f"0x{TUX_PRODUCT_ID:04X}",
             "commands_sent": self._commands_sent,
             "commands_failed": self._commands_failed,
             "last_error": self._last_error,
-            "serial_open": self._serial.is_open if self._serial else False,
         }
     
     def get_diagnostics(self) -> Dict[str, Any]:
@@ -551,36 +631,25 @@ class TuxDriver(TuxDriverInterface):
         Returns:
             dict: Diagnostic information
         """
-        import os
-        import glob
-        
         diagnostics = {
-            "device_path": self.device_path,
-            "device_exists": os.path.exists(self.device_path),
+            "driver_type": "USB HID",
+            "target_vendor_id": f"0x{TUX_VENDOR_ID:04X}",
+            "target_product_id": f"0x{TUX_PRODUCT_ID:04X}",
             "connected": self.is_connected(),
             "last_error": self._last_error,
             "commands_sent": self._commands_sent,
             "commands_failed": self._commands_failed,
         }
         
-        # Check serial devices
-        diagnostics["available_devices"] = {
-            "ttyUSB": glob.glob("/dev/ttyUSB*"),
-            "ttyACM": glob.glob("/dev/ttyACM*"),
-            "serial": glob.glob("/dev/serial/by-id/*"),
-        }
-        
-        # Check permissions
-        if os.path.exists(self.device_path):
-            import stat
-            st = os.stat(self.device_path)
-            diagnostics["device_permissions"] = {
-                "mode": oct(st.st_mode),
-                "uid": st.st_uid,
-                "gid": st.st_gid,
-            }
-        
-        # USB devices
-        diagnostics["usb_devices"] = self._list_usb_devices()
+        # Check if device is present
+        try:
+            import usb.core
+            device = usb.core.find(idVendor=TUX_VENDOR_ID, idProduct=TUX_PRODUCT_ID)
+            diagnostics["device_found"] = device is not None
+            if device:
+                diagnostics["device_bus"] = device.bus
+                diagnostics["device_address"] = device.address
+        except:
+            diagnostics["device_found"] = "unknown (pyusb not available)"
         
         return diagnostics
