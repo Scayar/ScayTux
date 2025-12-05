@@ -68,18 +68,59 @@ def initialize_tux_controller() -> TuxController:
     """
     global tux_controller
     
+    logger.info("")
+    logger.info("╔══════════════════════════════════════════════════════════════╗")
+    logger.info("║              TUX CONTROLLER INITIALIZATION                   ║")
+    logger.info("╚══════════════════════════════════════════════════════════════╝")
+    
     if settings.is_dev_mode:
-        logger.info("🐧 Initializing TUX controller in DEV mode (mock driver)")
+        logger.info("🧪 MODE: DEVELOPMENT (Mock Driver)")
+        logger.info("   Commands will be simulated, not sent to real hardware.")
+        logger.info("   To use real hardware, set TUX_MODE=PROD in .env")
+        logger.info("")
         driver = MockTuxDriver(simulate_delay=True, delay_ms=50)
     else:
-        logger.info(f"🐧 Initializing TUX controller in PROD mode (device: {settings.tux_device_path})")
+        logger.info("🔧 MODE: PRODUCTION (Real Hardware)")
+        logger.info(f"   Device path: {settings.tux_device_path}")
+        logger.info("   Commands will be sent to TUX Droid via USB.")
+        logger.info("")
+        logger.info("   If connection fails, run: python -m scripts.diagnose")
+        logger.info("")
         driver = TuxDriver(device_path=settings.tux_device_path)
     
     tux_controller = TuxController(driver)
     
-    # Auto-connect in DEV mode
-    if settings.is_dev_mode:
-        tux_controller.connect()
+    # Attempt to connect
+    logger.info("📡 Attempting to connect to TUX Droid...")
+    
+    if tux_controller.connect():
+        logger.info("✅ TUX Droid connected successfully!")
+        status = tux_controller.get_status()
+        logger.info(f"   Driver type: {status.get('driver_type', 'unknown')}")
+        logger.info(f"   Connected: {status.get('connected', False)}")
+    else:
+        if settings.is_dev_mode:
+            logger.warning("⚠️ Mock driver connection (expected in DEV mode)")
+        else:
+            logger.error("❌ Failed to connect to TUX Droid!")
+            logger.error("")
+            logger.error("🔧 TROUBLESHOOTING STEPS:")
+            logger.error("   1. Check if TUX dongle is plugged in:")
+            logger.error("      $ lsusb | grep -i ftdi")
+            logger.error("      $ ls -la /dev/ttyUSB*")
+            logger.error("")
+            logger.error("   2. Check permissions:")
+            logger.error("      $ sudo usermod -a -G dialout $USER")
+            logger.error("      $ sudo chmod 666 /dev/ttyUSB0")
+            logger.error("")
+            logger.error("   3. Run diagnostic tool:")
+            logger.error("      $ python -m scripts.diagnose")
+            logger.error("")
+    
+    logger.info("╔══════════════════════════════════════════════════════════════╗")
+    logger.info("║              INITIALIZATION COMPLETE                         ║")
+    logger.info("╚══════════════════════════════════════════════════════════════╝")
+    logger.info("")
     
     return tux_controller
 
