@@ -6,11 +6,19 @@ This module defines the abstract driver interface and real USB driver
 for communicating with TUX Droid hardware.
 
 The TUX Droid uses a USB dongle (fish dongle / fuxusb) that communicates 
-via USB HID protocol.
+via USB HID protocol on Interface 3.
 
-Device: Atmel Corp. Tux Droid fish dongle
+Device: Kysoh TuxDroid
 Vendor ID: 0x03eb
 Product ID: 0xff07
+
+USB Structure:
+- Interface 0: Audio (TuxDroid-Audio)
+- Interface 1: Audio (TuxDroid-Micro) 
+- Interface 2: Audio (TuxDroid-Speaker)
+- Interface 3: HID - COMMANDS (OUT: 0x05, IN: 0x84) ← This is what we use!
+- Interface 4: Audio (TuxDroid-TTS)
+- Interface 5: Audio (TuxDroid-TTS)
 
 Commands are 4 bytes each (CMD_SIZE = 4 from firmware).
 """
@@ -25,15 +33,16 @@ from .actions import TuxAction, ActionType, FIRMWARE_COMMANDS
 logger = logging.getLogger(__name__)
 
 # TUX Droid USB identifiers
-TUX_VENDOR_ID = 0x03eb   # Atmel Corp
+TUX_VENDOR_ID = 0x03eb   # Atmel/Kysoh
 TUX_PRODUCT_ID = 0xff07  # Tux Droid fish dongle
+
+# USB Interface and Endpoints for commands (HID interface)
+TUX_INTERFACE = 3        # HID interface for commands
+TUX_ENDPOINT_OUT = 0x05  # Interrupt OUT endpoint
+TUX_ENDPOINT_IN = 0x84   # Interrupt IN endpoint
 
 # Command size from firmware (defines.h)
 CMD_SIZE = 4
-
-# USB Endpoints (typical HID)
-USB_ENDPOINT_OUT = 0x02  # Write endpoint
-USB_ENDPOINT_IN = 0x81   # Read endpoint (0x80 | 1)
 
 
 class TuxDriverInterface(ABC):
@@ -118,9 +127,9 @@ class TuxDriver(TuxDriverInterface):
     This driver communicates with the actual TUX Droid hardware
     via USB using the pyusb library.
     
-    The TUX Droid fish dongle uses:
-    - Vendor ID: 0x03eb (Atmel)
-    - Product ID: 0xff07
+    The TUX Droid uses Interface 3 (HID) for commands:
+    - Endpoint OUT: 0x05 (Interrupt transfer)
+    - Endpoint IN: 0x84 (Interrupt transfer)
     """
     
     def __init__(self, device_path: str = "/dev/ttyUSB0"):
@@ -143,9 +152,12 @@ class TuxDriver(TuxDriverInterface):
         logger.info("=" * 60)
         logger.info("TuxDriver Initialization (USB HID Mode)")
         logger.info("=" * 60)
-        logger.info(f"Target device: Atmel Tux Droid fish dongle")
+        logger.info(f"Target device: Kysoh TuxDroid")
         logger.info(f"Vendor ID:  0x{TUX_VENDOR_ID:04X}")
         logger.info(f"Product ID: 0x{TUX_PRODUCT_ID:04X}")
+        logger.info(f"Interface:  {TUX_INTERFACE} (HID)")
+        logger.info(f"Endpoint OUT: 0x{TUX_ENDPOINT_OUT:02X}")
+        logger.info(f"Endpoint IN:  0x{TUX_ENDPOINT_IN:02X}")
         logger.info("=" * 60)
     
     def _find_tux_device(self):
@@ -178,7 +190,6 @@ class TuxDriver(TuxDriverInterface):
                 return device
             else:
                 logger.warning("❌ TUX Droid device not found!")
-                self._list_usb_devices()
                 return None
                 
         except ImportError:
@@ -188,30 +199,9 @@ class TuxDriver(TuxDriverInterface):
             logger.error(f"❌ Error finding device: {e}")
             return None
     
-    def _list_usb_devices(self):
-        """List all USB devices for debugging."""
-        try:
-            import usb.core
-            import usb.util
-            
-            logger.info("\n📋 Available USB devices:")
-            for device in usb.core.find(find_all=True):
-                try:
-                    vid = f"0x{device.idVendor:04X}"
-                    pid = f"0x{device.idProduct:04X}"
-                    try:
-                        product = usb.util.get_string(device, device.iProduct) or "Unknown"
-                    except:
-                        product = "Unknown"
-                    logger.info(f"   VID:{vid} PID:{pid} - {product}")
-                except:
-                    pass
-        except Exception as e:
-            logger.debug(f"Could not list USB devices: {e}")
-    
     def connect(self) -> bool:
         """
-        Establish connection to TUX Droid via USB.
+        Establish connection to TUX Droid via USB HID Interface 3.
         
         Returns:
             bool: True if connection successful, False otherwise
@@ -236,36 +226,37 @@ class TuxDriver(TuxDriverInterface):
             logger.error("")
             logger.error("🔧 TROUBLESHOOTING:")
             logger.error("   1. Check if TUX dongle is plugged in: lsusb")
-            logger.error("   2. Look for: 03eb:ff07 Atmel Corp. Tux Droid fish dongle")
-            logger.error("   3. Try unplugging and replugging the dongle")
+            logger.error("   2. Look for: 03eb:ff07 Kysoh TuxDroid")
             logger.error("")
             return False
         
         try:
-            # Detach kernel driver if attached
-            if self._device.is_kernel_driver_active(0):
-                logger.info("📤 Detaching kernel driver...")
+            # Detach kernel driver from Interface 3 if attached
+            logger.info(f"📝 Preparing Interface {TUX_INTERFACE} (HID)...")
+            
+            if self._device.is_kernel_driver_active(TUX_INTERFACE):
+                logger.info(f"   Detaching kernel driver from interface {TUX_INTERFACE}...")
                 try:
-                    self._device.detach_kernel_driver(0)
+                    self._device.detach_kernel_driver(TUX_INTERFACE)
                     self._kernel_driver_detached = True
                     logger.info("   ✅ Kernel driver detached")
                 except usb.core.USBError as e:
                     logger.warning(f"   ⚠️ Could not detach kernel driver: {e}")
             
-            # Set configuration
-            logger.info("📝 Setting USB configuration...")
+            # Set configuration (may already be set)
             try:
                 self._device.set_configuration()
-                logger.info("   ✅ Configuration set")
             except usb.core.USBError as e:
-                # May already be configured
                 logger.debug(f"   Configuration note: {e}")
             
-            # Get configuration and interface
-            cfg = self._device.get_active_configuration()
-            intf = cfg[(0, 0)]
+            # Claim Interface 3 (HID)
+            logger.info(f"   Claiming interface {TUX_INTERFACE}...")
+            usb.util.claim_interface(self._device, TUX_INTERFACE)
+            logger.info(f"   ✅ Interface {TUX_INTERFACE} claimed")
             
-            logger.info(f"📋 Interface: {intf}")
+            # Get the HID interface
+            cfg = self._device.get_active_configuration()
+            intf = cfg[(TUX_INTERFACE, 0)]  # Interface 3, alternate setting 0
             
             # Find endpoints
             self._endpoint_out = usb.util.find_descriptor(
@@ -278,13 +269,13 @@ class TuxDriver(TuxDriverInterface):
                 custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
             )
             
-            if self._endpoint_out is None:
-                # Try using control transfer instead
-                logger.info("   ℹ️ No OUT endpoint found, will use control transfers")
-            else:
+            if self._endpoint_out:
                 logger.info(f"   ✅ OUT endpoint: 0x{self._endpoint_out.bEndpointAddress:02X}")
+            else:
+                logger.error("   ❌ No OUT endpoint found!")
+                return False
             
-            if self._endpoint_in is not None:
+            if self._endpoint_in:
                 logger.info(f"   ✅ IN endpoint: 0x{self._endpoint_in.bEndpointAddress:02X}")
             
             self._connected = True
@@ -294,7 +285,7 @@ class TuxDriver(TuxDriverInterface):
             logger.info("✅ SUCCESSFULLY CONNECTED TO TUX DROID!")
             logger.info("=" * 60)
             
-            # Send initial ping
+            # Send initial ping to verify communication
             self._send_ping()
             
             return True
@@ -306,13 +297,9 @@ class TuxDriver(TuxDriverInterface):
             if "Access denied" in str(e) or "Permission" in str(e):
                 logger.error("")
                 logger.error("🔧 PERMISSION FIX:")
-                logger.error("   Option 1 - Create udev rule (recommended):")
                 logger.error('   echo \'SUBSYSTEM=="usb", ATTR{idVendor}=="03eb", ATTR{idProduct}=="ff07", MODE="0666"\' | sudo tee /etc/udev/rules.d/99-tuxdroid.rules')
                 logger.error("   sudo udevadm control --reload-rules")
                 logger.error("   sudo udevadm trigger")
-                logger.error("")
-                logger.error("   Option 2 - Run with sudo (not recommended):")
-                logger.error("   sudo python -m backend.main")
                 logger.error("")
             
             return False
@@ -333,24 +320,26 @@ class TuxDriver(TuxDriverInterface):
             
             result = self._usb_write(ping_cmd)
             if result:
-                logger.info("   ✅ PING sent successfully")
+                logger.info("   ✅ PING sent successfully!")
                 
                 # Try to read response
                 response = self._usb_read(timeout=500)
                 if response:
-                    logger.info(f"📥 PING response: {response.hex() if isinstance(response, bytes) else response}")
+                    logger.info(f"📥 PING response: {response.hex() if isinstance(response, bytes) else list(response)}")
                 else:
                     logger.info("📥 No PING response (may be normal)")
+            else:
+                logger.warning("   ⚠️ PING failed to send")
             
             return result
             
         except Exception as e:
-            logger.warning(f"⚠️ PING failed: {e}")
+            logger.warning(f"⚠️ PING error: {e}")
             return False
     
     def _usb_write(self, data: bytes) -> bool:
         """
-        Write data to TUX via USB.
+        Write data to TUX via USB Interrupt OUT endpoint.
         
         Args:
             data: Bytes to write
@@ -358,47 +347,27 @@ class TuxDriver(TuxDriverInterface):
         Returns:
             bool: True if successful
         """
-        if not self._device:
+        if not self._device or not self._endpoint_out:
+            logger.error("   ❌ Device or endpoint not available")
             return False
         
         try:
-            import usb.core
-            
             # Pad to CMD_SIZE
             padded_data = data.ljust(CMD_SIZE, b'\x00')[:CMD_SIZE]
             
-            if self._endpoint_out:
-                # Use bulk/interrupt transfer
-                bytes_written = self._endpoint_out.write(padded_data, timeout=1000)
-                logger.debug(f"   Written {bytes_written} bytes via endpoint")
-            else:
-                # Use control transfer (HID SET_REPORT)
-                # bmRequestType: 0x21 (Host to Device, Class, Interface)
-                # bRequest: 0x09 (SET_REPORT)
-                # wValue: 0x0200 (Report Type: Output, Report ID: 0)
-                # wIndex: 0 (Interface)
-                bytes_written = self._device.ctrl_transfer(
-                    bmRequestType=0x21,  # Host to device, class, interface
-                    bRequest=0x09,       # SET_REPORT
-                    wValue=0x0200,       # Output report
-                    wIndex=0,            # Interface 0
-                    data_or_wLength=padded_data,
-                    timeout=1000
-                )
-                logger.debug(f"   Written {bytes_written} bytes via control transfer")
+            # Write via interrupt endpoint
+            bytes_written = self._endpoint_out.write(padded_data, timeout=1000)
+            logger.debug(f"   Written {bytes_written} bytes to endpoint 0x{self._endpoint_out.bEndpointAddress:02X}")
             
-            return True
+            return bytes_written == len(padded_data)
             
-        except usb.core.USBError as e:
-            logger.error(f"   USB write error: {e}")
-            return False
         except Exception as e:
-            logger.error(f"   Write error: {e}")
+            logger.error(f"   USB write error: {e}")
             return False
     
     def _usb_read(self, timeout: int = 1000) -> Optional[bytes]:
         """
-        Read data from TUX via USB.
+        Read data from TUX via USB Interrupt IN endpoint.
         
         Args:
             timeout: Timeout in milliseconds
@@ -406,27 +375,12 @@ class TuxDriver(TuxDriverInterface):
         Returns:
             bytes or None
         """
-        if not self._device:
+        if not self._device or not self._endpoint_in:
             return None
         
         try:
-            import usb.core
-            
-            if self._endpoint_in:
-                data = self._endpoint_in.read(64, timeout=timeout)
-                return bytes(data)
-            else:
-                # Use control transfer (HID GET_REPORT)
-                data = self._device.ctrl_transfer(
-                    bmRequestType=0xA1,  # Device to host, class, interface
-                    bRequest=0x01,       # GET_REPORT
-                    wValue=0x0100,       # Input report
-                    wIndex=0,
-                    data_or_wLength=64,
-                    timeout=timeout
-                )
-                return bytes(data)
-                
+            data = self._endpoint_in.read(64, timeout=timeout)
+            return bytes(data)
         except Exception as e:
             logger.debug(f"   Read timeout or error: {e}")
             return None
@@ -441,6 +395,13 @@ class TuxDriver(TuxDriverInterface):
             if self._device:
                 # Release interface
                 try:
+                    usb.util.release_interface(self._device, TUX_INTERFACE)
+                    logger.info(f"   ✅ Interface {TUX_INTERFACE} released")
+                except:
+                    pass
+                
+                # Dispose resources
+                try:
                     usb.util.dispose_resources(self._device)
                 except:
                     pass
@@ -448,7 +409,7 @@ class TuxDriver(TuxDriverInterface):
                 # Reattach kernel driver if we detached it
                 if self._kernel_driver_detached:
                     try:
-                        self._device.attach_kernel_driver(0)
+                        self._device.attach_kernel_driver(TUX_INTERFACE)
                         logger.info("   ✅ Kernel driver reattached")
                     except:
                         pass
@@ -470,7 +431,7 @@ class TuxDriver(TuxDriverInterface):
     
     def is_connected(self) -> bool:
         """Check if connected to TUX Droid."""
-        return self._connected and self._device is not None
+        return self._connected and self._device is not None and self._endpoint_out is not None
     
     def send_command(self, command: bytes) -> bool:
         """
@@ -619,6 +580,9 @@ class TuxDriver(TuxDriverInterface):
             "driver_type": "hardware_usb",
             "usb_vendor_id": f"0x{TUX_VENDOR_ID:04X}",
             "usb_product_id": f"0x{TUX_PRODUCT_ID:04X}",
+            "usb_interface": TUX_INTERFACE,
+            "endpoint_out": f"0x{TUX_ENDPOINT_OUT:02X}",
+            "endpoint_in": f"0x{TUX_ENDPOINT_IN:02X}",
             "commands_sent": self._commands_sent,
             "commands_failed": self._commands_failed,
             "last_error": self._last_error,
@@ -635,6 +599,9 @@ class TuxDriver(TuxDriverInterface):
             "driver_type": "USB HID",
             "target_vendor_id": f"0x{TUX_VENDOR_ID:04X}",
             "target_product_id": f"0x{TUX_PRODUCT_ID:04X}",
+            "interface": TUX_INTERFACE,
+            "endpoint_out": f"0x{TUX_ENDPOINT_OUT:02X}",
+            "endpoint_in": f"0x{TUX_ENDPOINT_IN:02X}",
             "connected": self.is_connected(),
             "last_error": self._last_error,
             "commands_sent": self._commands_sent,
