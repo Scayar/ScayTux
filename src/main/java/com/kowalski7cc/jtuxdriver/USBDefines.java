@@ -16,14 +16,22 @@
 package com.kowalski7cc.jtuxdriver;
 
 /**
- * Defines
+ * USB Identifiers and Constants for Tux Droid
  */
 public class USBDefines {
 
-    public final static int PID = 0xffffff07;
-    public final static int VID = 0x3eb;
-    public final static String PNAME = "TuxDroid";
-    public final static byte[] STATUS = new byte[] { 0x01, 0x01, 0x00, 0x00 };
+    /** Vendor ID for Atmel/Tux Droid Dongle */
+    public final static int VID = 0x03eb;
+
+    /** Product ID for Tux Droid 'Fish' Dongle */
+    public final static int PID = 0xff07;
+
+    public final static String PRODUCT_NAME = "TuxDroid";
+
+    /** Standard status request packet */
+    public final static byte[] STATUS_REQUEST = new byte[] { 0x01, 0x01, 0x00, 0x00 };
+
+    /** HID Report Packet Length */
     public final static int PACKET_LENGTH = 64;
-    
+
 }

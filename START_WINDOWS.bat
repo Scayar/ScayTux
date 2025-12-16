@@ -1,15 +1,18 @@
 @echo off
 chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
-title 🐧 TuxDroid Controller - Windows
+title ScayTux - Tux Droid Controller
 
 :: Set colors (works on Windows 10+)
 for /f "tokens=*" %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
 
 echo.
 echo %ESC%[96m╔═══════════════════════════════════════════════════════════╗%ESC%[0m
-echo %ESC%[96m║       🐧 TUXDROID ULTIMATE CONTROLLER - WINDOWS 🐧        ║%ESC%[0m
+echo %ESC%[96m║            🐧 SCAYTUX - TUX DROID CONTROLLER 🐧           ║%ESC%[0m
 echo %ESC%[96m╚═══════════════════════════════════════════════════════════╝%ESC%[0m
+echo.
+echo %ESC%[90m              Made with %ESC%[91m♥%ESC%[90m by %ESC%[96mScayar%ESC%[0m
+echo %ESC%[90m              github.com/Scayar%ESC%[0m
 echo.
 
 :: Navigate to script directory
@@ -102,8 +105,8 @@ set "MVN_CMD=tools\maven\bin\mvn.cmd"
 echo.
 echo %ESC%[33m[3/4]%ESC%[0m Building project...
 
-:: Check if JAR already exists and is recent (skip rebuild)
-if exist "target\jtuxdriver-1.0-SNAPSHOT.jar" (
+:: Check if JAR already exists (skip rebuild)
+if exist "target\ScayTux.jar" (
     echo %ESC%[92m[OK]%ESC%[0m JAR file found, skipping build
     echo       ^(Delete target folder to force rebuild^)
     goto :build_done
@@ -143,17 +146,17 @@ echo %ESC%[92m[OK]%ESC%[0m Build successful!
 :: STEP 4: Run Application
 :: ═══════════════════════════════════════════════════════════════
 echo.
-echo %ESC%[33m[4/4]%ESC%[0m Starting TuxDroid Controller...
+echo %ESC%[33m[4/4]%ESC%[0m Starting ScayTux...
 echo.
 echo %ESC%[96m═══════════════════════════════════════════════════════════%ESC%[0m
 echo.
 
 :: Run with native access enabled (required for hid4java)
-java --enable-native-access=ALL-UNNAMED -jar "target\jtuxdriver-1.0-SNAPSHOT.jar" %*
+java --enable-native-access=ALL-UNNAMED -jar "target\ScayTux.jar" %*
 
 echo.
 echo %ESC%[96m═══════════════════════════════════════════════════════════%ESC%[0m
-echo %ESC%[92m[INFO]%ESC%[0m Application closed.
+echo %ESC%[92m[INFO]%ESC%[0m ScayTux closed.
+echo %ESC%[90m       Made with love by Scayar - github.com/Scayar%ESC%[0m
 echo.
 pause
-

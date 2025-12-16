@@ -15,154 +15,155 @@
 
 package com.kowalski7cc.jtuxdriver;
 
+/**
+ * Factory for creating Tux Droid USB Command packets.
+ * <p>
+ * Commands are 64-byte packets.
+ * The first byte is usually the target (TUX=0, FUX/Dongle=1).
+ * The second byte is the command opcode.
+ * </p>
+ */
 public class Command {
-    
-    public final static byte BOOTLOADER = 2;
+
+    // Initial byte targets
+    public final static byte TARGET_TUX = 0x00;
+    public final static byte TARGET_DONGLE = 0x01; // Also known as FUX
+    public final static byte TARGET_BOOTLOADER = 0x02;
 
     public static class Tux {
 
-        private final static byte TUX = 0;
-        
         public static class Eyes {
-            public final static byte EYES_OPEN_CMD = 0x33;
-            public final static byte EYES_CLOSE_CMD = 0x38;
-            public final static byte EYES_BLINK_CMD = 0x40;
-            public final static byte EYES_STOP_CMD = 0x32;
+            public final static byte OPEN = 0x33;
+            public final static byte CLOSE = 0x38;
+            public final static byte BLINK = 0x40;
+            public final static byte STOP = 0x32;
 
             public static byte[] open() {
-                return new byte[] {TUX, EYES_OPEN_CMD};
+                return Packet.of(TARGET_TUX, OPEN);
             }
 
             public static byte[] close() {
-                return new byte[] {TUX, EYES_CLOSE_CMD};
+                return Packet.of(TARGET_TUX, CLOSE);
             }
 
             public static byte[] blink(byte times) {
-                return new byte[] {TUX, EYES_BLINK_CMD, times };
+                return Packet.of(TARGET_TUX, BLINK, times);
             }
 
             public static byte[] stop() {
-                return new byte[] {TUX, EYES_STOP_CMD};
+                return Packet.of(TARGET_TUX, STOP);
             }
         }
 
         public static class Mouth {
-
-            public final static byte MOUTH_OPEN_CMD = 0x34;
-            public final static byte MOUTH_CLOSE_CMD = 0x35;
-            public final static byte MOUTH_MOVE_CMD = 0x41;
-            public final static byte MOUTH_STOP_CMD = 0x36;
+            public final static byte OPEN = 0x34;
+            public final static byte CLOSE = 0x35;
+            public final static byte MOVE = 0x41;
+            public final static byte STOP = 0x36;
 
             public static byte[] open() {
-                return new byte[] {TUX, MOUTH_OPEN_CMD, 1};
+                // Protocol weirdness: open expects a parameter '1' based on old code
+                return Packet.of(TARGET_TUX, OPEN, (byte) 1);
             }
 
             public static byte[] close() {
-                return new byte[] {TUX, MOUTH_CLOSE_CMD};
+                return Packet.of(TARGET_TUX, CLOSE);
             }
 
             public static byte[] move(byte times) {
-                return new byte[] {TUX, MOUTH_MOVE_CMD, times};
+                return Packet.of(TARGET_TUX, MOVE, times);
             }
 
             public static byte[] stop() {
-                return new byte[] {TUX, MOUTH_STOP_CMD};
+                return Packet.of(TARGET_TUX, STOP);
             }
-
         }
 
         public static class Flippers {
-            public final static byte FLIPPERS_RAISE_CMD = 0x39;
-            public final static byte FLIPPERS_LOWER_CMD = 0x3A;
-            public final static byte FLIPPERS_WAVE_CMD = (byte) 0x80;
-            public final static byte FLIPPERS_STOP_CMD = 0x30;
+            public final static byte RAISE = 0x39;
+            public final static byte LOWER = 0x3A;
+            public final static byte WAVE = (byte) 0x80;
+            public final static byte STOP = 0x30;
 
             public static byte[] raise() {
-                return new byte[] {TUX, FLIPPERS_RAISE_CMD};
+                return Packet.of(TARGET_TUX, RAISE);
             }
-            
+
             public static byte[] lower() {
-                return new byte[] {TUX, FLIPPERS_LOWER_CMD};
+                return Packet.of(TARGET_TUX, LOWER);
             }
+
             public static byte[] wave(byte times, byte speed) {
-                return new byte[] {TUX, FLIPPERS_WAVE_CMD, times, speed};
+                return Packet.of(TARGET_TUX, WAVE, times, speed);
             }
 
             public static byte[] stop() {
-                return new byte[] {TUX, FLIPPERS_STOP_CMD};
+                return Packet.of(TARGET_TUX, STOP);
             }
-
         }
 
         public static class Led {
-            private final static byte LED_FADE_SPEED_CMD = (byte) 0xD0;
-            private final static byte LED_SET_CMD = (byte) 0xD1;
-            private final static byte LED_PULSE_RANGE_CMD = (byte) 0xD2;
-            private final static byte LED_PULSE_CMD = (byte) 0xD3;
+            // 0xD0 - 0xD3 range
+            private final static byte PULSE = (byte) 0xD3;
+            private final static byte SET = (byte) 0xD1;
 
-            // TODO LED_FADE_SPEED_CMD
-
-            // TODO LED_PULSE_RANGE_CMD
-
-            public static byte[] pulse(byte parama, byte paramb) {
-                return new byte[] {TUX, LED_PULSE_CMD, parama, paramb};
+            public static byte[] pulse(byte color, byte speed) {
+                return Packet.of(TARGET_TUX, PULSE, color, speed);
             }
 
-            public static byte[] set(byte parama, byte paramb) {
-                return new byte[] {TUX, LED_SET_CMD, parama, paramb};
+            public static byte[] set(byte color, byte intensity) {
+                return Packet.of(TARGET_TUX, SET, color, intensity);
             }
-
         }
-    
+
         public static class Spin {
-            private final static byte SPIN_LEFT_CMD = (byte) 0x83;
-            private final static byte SPIN_RIGHT_CMD = (byte) 0x82;
-            private final static byte SPIN_STOP_CMD = 0x37;
+            private final static byte LEFT = (byte) 0x83;
+            private final static byte RIGHT = (byte) 0x82;
+            private final static byte STOP = 0x37; // Standard stop?
+
+            public static byte[] left(byte degrees) {
+                return Packet.of(TARGET_TUX, LEFT, degrees);
+            }
+
+            public static byte[] right(byte degrees) {
+                return Packet.of(TARGET_TUX, RIGHT, degrees);
+            }
+
+            public static byte[] stop() {
+                return Packet.of(TARGET_TUX, STOP);
+            }
         }
-        
     }
 
-    public static class Fux {
+    public static class Dongle {
+        private final static byte CMD_CONNECTION = 0;
 
-        public final static byte FUX = 1;
-        private final static byte USB_DONGLE_STATUS_CMD = 1;
-        private final static byte USB_DONGLE_AUDIO_CMD = 2;
-        private final static byte USB_DONGLE_VERSION_CMD = 6;
-        private final static byte USB_DONGLE_CONNECTION_CMD = 0;
+        private final static byte CONN_DISCONNECT = 1;
+        private final static byte CONN_CONNECT = 2;
+        private final static byte CONN_ID_REQUEST = 3;
+        private final static byte CONN_ID_LOOKUP = 4;
+        private final static byte CONN_WAKEUP = 6;
 
-        public static class Connection {
-            
-            private final static byte USB_TUX_CONNECTION_DISCONNECT = 1;
-            private final static byte USB_TUX_CONNECTION_CONNECT = 2;
-            private final static byte USB_TUX_CONNECTION_ID_REQUEST = 3;
-            private final static byte USB_TUX_CONNECTION_ID_LOOKUP = 4;
-            private final static byte USB_TUX_CONNECTION_CHANGE_ID = 5;
-            private final static byte USB_TUX_CONNECTION_WAKEUP = 6;
-            private final static byte USB_TUX_CONNECTION_WIRELESS_CHANNEL = 7;
-
-            public static byte[] connect() {
-                return new byte[] {FUX, USB_DONGLE_CONNECTION_CMD, USB_TUX_CONNECTION_CONNECT};
-            }
-
-            public static byte[] disconnect() {
-                return new byte[] {FUX, USB_DONGLE_CONNECTION_CMD, USB_TUX_CONNECTION_DISCONNECT, 0, 0};
-            }
-
-            public static byte[] idRequest() {
-                return new byte[] {FUX, USB_DONGLE_CONNECTION_CMD, USB_TUX_CONNECTION_ID_REQUEST};
-            }
-
-            public static byte[] idLookup() {
-                return new byte[] {FUX, USB_DONGLE_CONNECTION_CMD, USB_TUX_CONNECTION_ID_LOOKUP};
-            }
-
-            public static byte[] wakeup() {
-                return new byte[] {FUX, USB_DONGLE_CONNECTION_CMD, USB_TUX_CONNECTION_WAKEUP};
-            }
-
-
+        public static byte[] connect() {
+            return Packet.of(TARGET_DONGLE, CMD_CONNECTION, CONN_CONNECT);
         }
 
+        public static byte[] disconnect() {
+            // Old code had extra 0s?
+            return Packet.of(TARGET_DONGLE, CMD_CONNECTION, CONN_DISCONNECT, (byte) 0, (byte) 0);
+        }
+
+        public static byte[] wakeup() {
+            return Packet.of(TARGET_DONGLE, CMD_CONNECTION, CONN_WAKEUP);
+        }
     }
-    
+
+    /** Helper for creating padded packets */
+    private static class Packet {
+        static byte[] of(byte... bytes) {
+            byte[] p = new byte[USBDefines.PACKET_LENGTH]; // 64
+            System.arraycopy(bytes, 0, p, 0, Math.min(bytes.length, 64));
+            return p;
+        }
+    }
 }

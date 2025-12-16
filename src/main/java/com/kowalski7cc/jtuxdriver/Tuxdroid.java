@@ -1,138 +1,129 @@
-// Copyright (C) 2019 Kowalski7cc
-// 
-// JTuxDriver is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// JTuxDriver is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with JTuxDriver. If not, see <http://www.gnu.org/licenses/>.
-
 package com.kowalski7cc.jtuxdriver;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+import com.kowalski7cc.jtuxdriver.core.UsbTransport;
 
-import org.hid4java.HidDevice;
-import org.hid4java.HidManager;
-import org.hid4java.HidServices;
-import org.hid4java.HidServicesListener;
-import org.hid4java.event.HidServicesEvent;
+import java.io.Closeable;
+import java.io.IOException;
 
-public class Tuxdroid {
+public class TuxDroid implements Closeable {
 
-    private AtomicReference<HidDevice> device;
-    private Runnable onConnected = () -> {};
-    private Runnable onDisconnected = () -> {};
+    private final UsbTransport transport;
+    private final Object writeLock = new Object();
 
-    private Consumer<byte[]> eventListener = (b) -> {
-    };
-    private Thread readLoop = new Thread(() -> {
-        byte[] data = new byte[USBDefines.PACKET_LENGTH];
-        try {
-            while (!Thread.interrupted()) {
-                if (device.get() == null) {
-                    synchronized (device) {
-                        device.wait();
-                        
-                    }
-                    device.get().open();
-                }
-                if (device.get().isOpen()){
-                    try {
-                        device.get().write(USBDefines.STATUS, USBDefines.PACKET_LENGTH, (byte) 0);
-                        device.get().read(data, 1000);
-                        eventListener.accept(data);
-                        synchronized(device) {
-                            device.notifyAll();
-                        }
-                    } catch(NullPointerException e) {
-                    }                   
-                }
-                Thread.sleep(300);
-            }
-        } catch (InterruptedException e) {
-            System.out.println("loop interrupted");
+    public TuxDroid(UsbTransport transport) {
+        this.transport = transport;
+    }
+
+    // Thread-safe write helper
+    private void write(byte[] packet) throws IOException {
+        synchronized (writeLock) {
+            transport.write(packet);
         }
-    });
-
-    public Tuxdroid() {
-        device = new AtomicReference<>();
     }
 
-    public void start() {
-        HidServices hidServices = HidManager.getHidServices();
-        hidServices.addHidServicesListener(new HidServicesListener() {
+    public void open() throws IOException {
+        transport.open();
+        write(Command.Dongle.connect());
+    }
 
-            @Override
-            public void hidFailure(HidServicesEvent event) {
+    public void setInputListener(java.util.function.Consumer<byte[]> listener) {
+        transport.setEventListener(listener);
+    }
 
+    @Override
+    public void close() {
+        try {
+            if (transport.isOpen()) {
+                write(Command.Dongle.disconnect());
             }
-
-            @Override
-            public void hidDeviceDetached(HidServicesEvent event) {
-                if (event.getHidDevice().isVidPidSerial(USBDefines.VID, USBDefines.PID, null)) {
-                    synchronized (device) {
-                        device.set(null);
-                        device.notifyAll();
-                        onDisconnected.run();
-                    }
-                }
-            }
-
-            @Override
-            public void hidDeviceAttached(HidServicesEvent event) {
-                if (event.getHidDevice().isVidPidSerial(USBDefines.VID, USBDefines.PID, null)) {
-                    synchronized (device) {
-                        device.set(event.getHidDevice());
-                        device.notifyAll();
-                        onConnected.run();
-                    }
-                }
-            }
-        });
-
-        // Scan for already attached dongle
-        Optional.ofNullable(hidServices.getHidDevice(USBDefines.VID, USBDefines.PID, null))
-                .ifPresent(found -> device.set(found));
-
-        readLoop.start();
+        } catch (Exception e) {
+        } finally {
+            transport.close();
+        }
     }
 
-    public void setEventListener(Consumer<byte[]> eventListener) {
-        this.eventListener = eventListener;
+    // --- Wings (Flippers) ---
+    public void flapWings() throws IOException {
+        write(Command.Tux.Flippers.raise());
+        sleep(500);
+        write(Command.Tux.Flippers.lower());
+        sleep(500);
+        write(Command.Tux.Flippers.raise());
+        sleep(500);
+        write(Command.Tux.Flippers.lower());
     }
 
-    public void writeRaw(byte[] bs) {
-        if(device.get() != null)
-            if(device.get().isOpen())
-                device.get().write(bs, 64, (byte) 0);
+    // --- Eyes ---
+    public void setEyes(boolean on) throws IOException {
+        if (on)
+            write(Command.Tux.Eyes.open());
+        else
+            write(Command.Tux.Eyes.close());
     }
 
-    public boolean openDevice() {
-        return (device.get() != null) ? device.get().open() : false;
+    public void blinkEyes(int times) throws IOException {
+        write(Command.Tux.Eyes.blink((byte) times));
     }
 
-    public boolean isDeviceOpen() {
-        return (device.get() != null) ? device.get().isOpen() : false;
+    // --- Mouth ---
+    public void setMouth(boolean open) throws IOException {
+        if (open)
+            write(Command.Tux.Mouth.open());
+        else
+            write(Command.Tux.Mouth.close());
     }
 
-    public void stop() {
-        readLoop.interrupt();
+    public void moveMouth(int times) throws IOException {
+        write(Command.Tux.Mouth.move((byte) times));
     }
 
-    public void setOnDisconnected(Runnable callback) {
-        this.onDisconnected = callback;
+    public void openMouth() throws IOException {
+        write(Command.Tux.Mouth.open());
     }
 
-    public void setOnConnected(Runnable callback) {
-        this.onConnected = callback;
+    public void closeMouth() throws IOException {
+        write(Command.Tux.Mouth.close());
     }
 
+    // --- Spin ---
+    public void spinLeft() throws IOException {
+        spinLeft(20);
+    }
+
+    public void spinLeft(int duration) throws IOException {
+        // SMOOTH SPIN: Reduced sleep to 20ms to prevent motor stopping between packets.
+        System.out.println("[DEBUG] Smooth-Spin LEFT: " + duration + " loops (20ms delay).");
+
+        for (int i = 0; i < duration; i++) {
+            write(Command.Tux.Spin.left((byte) 0xFF));
+            sleep(20); // Low enough to keep momentum, high enough to not flood USB
+        }
+        write(Command.Tux.Spin.stop());
+    }
+
+    public void spinRight() throws IOException {
+        spinRight(20);
+    }
+
+    public void spinRight(int duration) throws IOException {
+        System.out.println("[DEBUG] Smooth-Spin RIGHT: " + duration + " loops (20ms delay).");
+        for (int i = 0; i < duration; i++) {
+            write(Command.Tux.Spin.right((byte) 0xFF));
+            sleep(20);
+        }
+        write(Command.Tux.Spin.stop());
+    }
+
+    // --- LED ---
+    public void setLed(int color, int intensity) throws IOException {
+        write(Command.Tux.Led.set((byte) color, (byte) intensity));
+    }
+
+    private void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }
