@@ -79,24 +79,24 @@ flowchart TB
     end
 
     subgraph "ScayTux Core System"
-        CLI --> MAIN[App Controller]
+        CLI --> MAIN["App Controller"]
         TG --> MAIN
         
-        MAIN --> COMBOS[Animation Engine]
+        MAIN --> COMBOS["Animation Engine"]
         
         subgraph "Modules"
-            COMBOS --> AUDIO[Audio Player]
-            COMBOS --> TTS[Text-to-Speech]
-            COMBOS --> TUX[Tux Controller]
+            COMBOS --> AUDIO["Audio Player"]
+            COMBOS --> TTS["Text-to-Speech"]
+            COMBOS --> TUX["Tux Controller"]
         end
         
-        TUX --> CMD[Command Factory]
+        TUX --> CMD["Command Factory"]
     end
 
     subgraph "Hardware Communication"
-        CMD --> HID[HID Transport Layer]
-        HID --> DONGLE[USB Dongle (Fishtank)]
-        DONGLE --> ROBOT[Tux Droid Robot]
+        CMD --> HID["HID Transport Layer"]
+        HID --> DONGLE["USB Dongle (Fishtank)"]
+        DONGLE --> ROBOT["Tux Droid Robot"]
     end
     
     subgraph "External Systems"
