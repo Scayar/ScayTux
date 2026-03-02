@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { Github, ExternalLink } from '@/components/Icons';
 
 export const metadata = {
