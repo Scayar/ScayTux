@@ -11,17 +11,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.Arrays;
 
+import com.kowalski7cc.jtuxdriver.USBDefines;
+
 /**
  * Concrete implementation of {@link UsbTransport} using hid4java.
  * Targets the Tux Droid fishtank dongle (03eb:ff07).
  */
 public class HidTransport implements UsbTransport, HidServicesListener {
 
-    private static final int VID = 0x03eb;
-    private static final int PID = 0xff07; // 65287 (unsigned short for 0xFF07)
-
-    // Packet size is 64 bytes for Tux Droid HID
-    private static final int PACKET_LENGTH = 64;
+    private static final int VID = USBDefines.VID;
+    private static final int PID = USBDefines.PID;
+    private static final int PACKET_LENGTH = USBDefines.PACKET_LENGTH;
 
     private HidServices hidServices;
     private HidDevice device;

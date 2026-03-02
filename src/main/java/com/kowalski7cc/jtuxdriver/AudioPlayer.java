@@ -134,8 +134,9 @@ public class AudioPlayer {
                 // Convert 16-bit to 8-bit Mono
                 byte[] bytes;
                 if (isStereo) {
-                    bytes = new byte[len / 2];
-                    for (int i = 0; i < len; i += 2) {
+                    int stereoLen = len - (len % 2);
+                    bytes = new byte[stereoLen / 2];
+                    for (int i = 0; i < stereoLen; i += 2) {
                         int val = (samples[i] + samples[i + 1]) / 2;
                         bytes[i / 2] = (byte) (val >> 8);
                     }

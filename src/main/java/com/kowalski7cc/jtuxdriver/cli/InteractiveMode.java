@@ -298,7 +298,7 @@ public class InteractiveMode {
             System.out.println(BOLD + "\n[ INTERACTIVE MENU ]" + RESET);
             System.out.println(CYAN + "--- CATEGORIES ---" + RESET);
             System.out.println("1. " + BLUE + "Show Top 10 Cinematic Combos" + RESET);
-            System.out.println("2. " + BLUE + "Show All 50 Combos" + RESET);
+            System.out.println("2. " + BLUE + "Show All 100 Combos" + RESET);
             System.out.println("3. " + BLUE + "Basic Controls (Eyes, Wings, Spin...)" + RESET);
             System.out.println("4. " + BLUE + "Diagnostics" + RESET);
             System.out.println("5. " + PURPLE + "Music Player Menu" + RESET);
@@ -315,7 +315,7 @@ public class InteractiveMode {
                     showCombos(1, 10);
                     break;
                 case "2":
-                    showCombos(1, 50);
+                    showCombos(1, 100);
                     break;
                 case "3":
                     showBasicControls();
@@ -326,13 +326,10 @@ public class InteractiveMode {
                 case "5":
                     runMusicMenu();
                     break;
-                case "6":
-                    runMusicMenu();
-                    break;
                 default:
                     try {
                         int id = Integer.parseInt(input);
-                        if (id >= 1 && id <= 55)
+                        if (id >= 1 && id <= 100)
                             executeCmd("--combo " + id);
                         else
                             System.out.println(RED + "Invalid selection." + RESET);
@@ -482,11 +479,56 @@ public class InteractiveMode {
             case 48: return "Cyber Knight";
             case 49: return "DJ Mode";
             case 50: return "Grand Closing";
-            case 51: return "Michael Jackson";
-            case 52: return "Chicken Dance";
-            case 53: return "Suirian Dabkah";
-            case 54: return "Crazy";
-            case 55: return "Say My Name";
+            case 51: return "Disco Fever";
+            case 52: return "Morning Stretch";
+            case 53: return "Pirate Captain";
+            case 54: return "Opera Singer";
+            case 55: return "Counting Sheep";
+            case 56: return "Thunder Storm";
+            case 57: return "Zen Meditation";
+            case 58: return "Rocket Launch";
+            case 59: return "Penguin Walk";
+            case 60: return "Time Bomb";
+            case 61: return "Weatherman";
+            case 62: return "Fitness Coach";
+            case 63: return "Alarm Clock";
+            case 64: return "Moonwalk";
+            case 65: return "Karate Chop";
+            case 66: return "News Anchor";
+            case 67: return "Evil Villain";
+            case 68: return "Cheerleader";
+            case 69: return "Ghostly Haunt";
+            case 70: return "Cowboy Duel";
+            case 71: return "Science Lab";
+            case 72: return "Royal Wave";
+            case 73: return "Breakdance";
+            case 74: return "Sneezing Fit";
+            case 75: return "Photo Pose";
+            case 76: return "Hypnotize";
+            case 77: return "Traffic Cop";
+            case 78: return "Submarine";
+            case 79: return "Birthday Party";
+            case 80: return "Mime Artist";
+            case 81: return "Space Explorer";
+            case 82: return "Chef Kiss";
+            case 83: return "Drill Sergeant";
+            case 84: return "Morse Code";
+            case 85: return "Surfer Dude";
+            case 86: return "Orchestra";
+            case 87: return "Spy Mode";
+            case 88: return "Fortune Teller";
+            case 89: return "Heavyweight Champ";
+            case 90: return "Penguin Shuffle";
+            case 91: return "Michael Jackson";
+            case 92: return "Chicken Dance";
+            case 93: return "Syrian Dabkah";
+            case 94: return "Crazy Mode";
+            case 95: return "Say My Name";
+            case 96: return "Robot Rock";
+            case 97: return "Macarena";
+            case 98: return "Egyptian Walk";
+            case 99: return "Cha Cha Slide";
+            case 100: return "Tux Anthem";
             default: return "Cinematic Act";
         }
     }

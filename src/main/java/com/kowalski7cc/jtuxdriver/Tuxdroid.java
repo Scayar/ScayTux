@@ -14,7 +14,6 @@ public class TuxDroid implements Closeable {
         this.transport = transport;
     }
 
-    // Thread-safe write helper
     private void write(byte[] packet) throws IOException {
         synchronized (writeLock) {
             transport.write(packet);
@@ -37,12 +36,16 @@ public class TuxDroid implements Closeable {
                 write(Command.Dongle.disconnect());
             }
         } catch (Exception e) {
+            System.err.println("[TuxDroid] Error during disconnect: " + e.getMessage());
         } finally {
-            transport.close();
+            try {
+                transport.close();
+            } catch (Exception e) {
+                System.err.println("[TuxDroid] Error closing transport: " + e.getMessage());
+            }
         }
     }
 
-    // --- Wings (Flippers) ---
     public void flapWings() throws IOException {
         write(Command.Tux.Flippers.raise());
         sleep(500);
@@ -53,7 +56,6 @@ public class TuxDroid implements Closeable {
         write(Command.Tux.Flippers.lower());
     }
 
-    // --- Eyes ---
     public void setEyes(boolean on) throws IOException {
         if (on)
             write(Command.Tux.Eyes.open());
@@ -65,7 +67,6 @@ public class TuxDroid implements Closeable {
         write(Command.Tux.Eyes.blink((byte) times));
     }
 
-    // --- Mouth ---
     public void setMouth(boolean open) throws IOException {
         if (open)
             write(Command.Tux.Mouth.open());
@@ -85,18 +86,14 @@ public class TuxDroid implements Closeable {
         write(Command.Tux.Mouth.close());
     }
 
-    // --- Spin ---
     public void spinLeft() throws IOException {
         spinLeft(20);
     }
 
     public void spinLeft(int duration) throws IOException {
-        // SMOOTH SPIN: Reduced sleep to 20ms to prevent motor stopping between packets.
-        System.out.println("[DEBUG] Smooth-Spin LEFT: " + duration + " loops (20ms delay).");
-
         for (int i = 0; i < duration; i++) {
             write(Command.Tux.Spin.left((byte) 0xFF));
-            sleep(20); // Low enough to keep momentum, high enough to not flood USB
+            sleep(20);
         }
         write(Command.Tux.Spin.stop());
     }
@@ -106,7 +103,6 @@ public class TuxDroid implements Closeable {
     }
 
     public void spinRight(int duration) throws IOException {
-        System.out.println("[DEBUG] Smooth-Spin RIGHT: " + duration + " loops (20ms delay).");
         for (int i = 0; i < duration; i++) {
             write(Command.Tux.Spin.right((byte) 0xFF));
             sleep(20);
@@ -114,7 +110,6 @@ public class TuxDroid implements Closeable {
         write(Command.Tux.Spin.stop());
     }
 
-    // --- LED ---
     public void setLed(int color, int intensity) throws IOException {
         write(Command.Tux.Led.set((byte) color, (byte) intensity));
     }

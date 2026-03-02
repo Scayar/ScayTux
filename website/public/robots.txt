@@ -1,0 +1,11 @@
+# Tux Droid - TuxDroid Software
+# https://tuxdroid.com
+
+User-agent: *
+Allow: /
+
+# Sitemap location (update if hosted elsewhere)
+Sitemap: https://tuxdroid.com/sitemap.xml
+
+# Crawl-delay is NOT supported by Google - omit it
+# Focus on quality content and fast site for better ranking

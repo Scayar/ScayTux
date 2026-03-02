@@ -2,6 +2,7 @@
   <img src="https://img.shields.io/badge/ScayTux-v3.0-cyan?style=for-the-badge&logo=linux&logoColor=white" alt="ScayTux v3.0">
   <img src="https://img.shields.io/badge/Java-8%2B-orange?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 8+">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue?style=for-the-badge" alt="Platform">
+  <img src="https://img.shields.io/badge/100-Combos-green?style=for-the-badge" alt="100 Combos">
   <img src="https://img.shields.io/badge/License-LGPL--3.0-green?style=for-the-badge" alt="License">
 </p>
 
@@ -13,24 +14,35 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Scayar"><img src="https://img.shields.io/badge/Author-Scayar-cyan?style=flat-square" alt="Author"></a>
+  <a href="https://tuxdroid.com"><img src="https://img.shields.io/badge/Website-Tuxdroid.com-FF6A00?style=flat-square&logo=globe&logoColor=white" alt="Website"></a>
   <a href="https://github.com/Scayar/ScayTux"><img src="https://img.shields.io/badge/GitHub-Scayar%2FScayTux-black?style=flat-square&logo=github" alt="GitHub"></a>
   <a href="https://buymeacoffee.com/scayar"><img src="https://img.shields.io/badge/Support-Buy%20Me%20a%20Coffee-yellow?style=flat-square&logo=buy-me-a-coffee&logoColor=black" alt="Support"></a>
 </p>
 
 ---
 
+## 🌐 Website
+
+**[Tuxdroid.com](https://tuxdroid.com)** — Full documentation, installation guides, 100 combos list, Telegram setup, TTS guide, troubleshooting, and more!
+
+---
+
 ## 📋 Table of Contents
 
+- [Website](#-website)
 - [Overview](#-overview)
 - [Features](#-features)
-- [Architecture](#-architecture)
+- [Hardware Requirements](#-hardware-requirements)
 - [Quick Start](#-quick-start)
 - [Installation](#-installation)
+- [First Run](#-first-run)
 - [Usage](#-usage)
 - [Commands Reference](#-commands-reference)
+- [100 Combos (Full List)](#-100-combos-full-list)
 - [Telegram Remote Control](#-telegram-remote-control)
+- [Text-to-Speech & Audio](#-text-to-speech--audio)
 - [Project Structure](#-project-structure)
+- [Manual Build](#-manual-build)
 - [Dependencies](#-dependencies)
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
@@ -41,7 +53,9 @@
 
 ## 🌟 Overview
 
-**ScayTux** is a modern, cross-platform Java application that resurrects the classic Tux Droid robot for modern operating systems. No more outdated Python scripts or broken dependencies – just pure, fast Java power with a beautiful interactive CLI, Telegram bot integration, and 55+ cinematic animation combos!
+**ScayTux** is a modern, cross-platform Java application that resurrects the classic **Tux Droid** robot for modern operating systems. No more outdated Python scripts or broken dependencies — pure Java power with 100 cinematic animations, Telegram bot, TTS, and a beautiful interactive CLI.
+
+**What is Tux Droid?** A Linux mascot robot from 2006 — a USB-connected penguin that moves eyes, beak, wings, and body. The original software is abandoned; ScayTux brings it back to life.
 
 ```
   ███████╗ ██████╗ █████╗ ██╗   ██╗████████╗██╗   ██╗██╗  ██╗
@@ -59,112 +73,39 @@
 | Feature | Description |
 |---------|-------------|
 | ⚡ **Cross-Platform** | Single codebase for Windows 10/11 and Linux (Ubuntu/Debian) |
-| 📱 **Telegram Remote** | Control your Tux from anywhere via Telegram Bot |
-| 🗣️ **Text-to-Speech** | Windows: Native PowerShell • Linux: espeak |
-| 🎵 **Music Player** | Play MP3s through Tux Droid with synchronized dancing |
-| 🎭 **55 Cinematic Combos** | Pre-programmed animations from "Royal Entrance" to "DJ Mode" |
+| 📱 **Telegram Remote** | Control your Tux from anywhere via inline-keyboard Telegram Bot |
+| 🎭 **100 Combos** | 90 animation combos + 10 music+dance combos |
+| 🗣️ **Text-to-Speech** | Windows: PowerShell • Linux: espeak with multiple voices |
+| 🎵 **Music Player** | Play MP3s through Tux with synchronized dancing |
 | 🔌 **Plug & Play** | Auto-detects USB dongle (VID: 0x03eb, PID: 0xFF07) |
-| ⌨️ **Interactive CLI** | Beautiful menu-driven interface with ANSI colors |
+| ⌨️ **Interactive CLI** | Beautiful ANSI-colored menu system |
 | 🦅 **Full Motor Control** | Eyes, Mouth, Wings, Spin, LED with smooth animations |
 
 ---
 
-## 🏗️ Architecture
+## 🔧 Hardware Requirements
 
-```mermaid
-flowchart TB
-    subgraph "User Interaction Layer"
-        U[Desktop User] --> CLI[Interactive CLI]
-        TG_U[Mobile User] --> TG[Telegram Bot]
-    end
-
-    subgraph "ScayTux Core System"
-        CLI --> MAIN["App Controller"]
-        TG --> MAIN
-        
-        MAIN --> COMBOS["Animation Engine"]
-        
-        subgraph "Modules"
-            COMBOS --> AUDIO["Audio Player"]
-            COMBOS --> TTS["Text-to-Speech"]
-            COMBOS --> TUX["Tux Controller"]
-        end
-        
-        TUX --> CMD["Command Factory"]
-    end
-
-    subgraph "Hardware Communication"
-        CMD --> HID["HID Transport Layer"]
-        HID --> DONGLE["USB Dongle (Fishtank)"]
-        DONGLE --> ROBOT["Tux Droid Robot"]
-    end
-    
-    subgraph "External Systems"
-        TTS --> OS_TTS[OS Voice Service]
-        AUDIO --> OS_AUD[System Sound Mixer]
-    end
-
-    style U fill:#e1f5fe
-    style TG_U fill:#e1f5fe
-    style CLI fill:#f3e5f5
-    style TG fill:#f3e5f5
-    style MAIN fill:#fff3e0
-    style COMBOS fill:#fff3e0
-    style AUDIO fill:#e8f5e8
-    style TTS fill:#e8f5e8
-    style TUX fill:#e8f5e8
-    style CMD fill:#fff8e1
-    style HID fill:#fce4ec
-    style DONGLE fill:#fce4ec
-    style ROBOT fill:#f8bbd0
-    style OS_TTS fill:#f0f4ff
-    style OS_AUD fill:#f0f4ff
-```
-
-### Data Flow Overview
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant App
-    participant Core
-    participant Hardware
-    participant Tux
-
-    User->>App: Sends Command (e.g., /dance)
-    App->>Core: Triggers Animation Combo
-    
-    par Audio
-        Core->>App: Plays Music
-    and Motion
-        Core->>Hardware: Wings Up
-        Hardware->>Tux: 🦅
-        Core->>Hardware: Spin Left
-        Hardware->>Tux: 🔄
-        Core->>Hardware: Blink Eyes
-        Hardware->>Tux: 👀
-    end
-    
-    Tux-->>User: Visual Feedback (Dancing)
-```
+| Item | Description |
+|------|-------------|
+| **Tux Droid** | The penguin robot (with batteries) |
+| **USB Dongle** | "Fishtank" dongle (VID: 0x03eb, PID: 0xFF07) |
+| **USB Cable** | Connect dongle to your computer |
 
 ---
 
 ## 🚀 Quick Start
 
-### 🪟 Windows (One-Click)
+### Windows (One-Click)
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/Scayar/ScayTux
-
-# 2. Double-click to run
+cd ScayTux
 START_WINDOWS.bat
 ```
 
-> **Automatic**: Installs portable Maven, builds project, launches Interactive Mode
+> **Automatic**: Installs portable Maven, builds project, launches Interactive Mode.
 
-### 🐧 Linux (One-Command)
+### Linux (One-Command)
 
 ```bash
 git clone https://github.com/Scayar/ScayTux
@@ -172,7 +113,16 @@ cd ScayTux
 chmod +x START_LINUX.sh && ./START_LINUX.sh
 ```
 
-> **Automatic**: Installs OpenJDK, Maven, espeak, libhidapi, sets udev rules
+> **Automatic**: Installs OpenJDK, Maven, espeak, libhidapi, configures udev rules.
+
+### Manual Build (Any Platform)
+
+```bash
+git clone https://github.com/Scayar/ScayTux
+cd ScayTux
+mvn clean package -DskipTests
+java -jar target/ScayTux.jar
+```
 
 ---
 
@@ -180,33 +130,41 @@ chmod +x START_LINUX.sh && ./START_LINUX.sh
 
 ### Prerequisites
 
-| Platform | Requirement | Installation |
-|----------|-------------|--------------|
-| **All** | Java 8+ | [Adoptium](https://adoptium.net/) or [Oracle](https://www.oracle.com/java/technologies/downloads/) |
+| Platform | Requirement | How to Install |
+|----------|-------------|----------------|
+| **All** | Java 8+ | [Adoptium](https://adoptium.net/) or [Oracle JDK](https://www.oracle.com/java/technologies/downloads/) |
 | **All** | Maven 3.6+ | Auto-installed by launcher scripts |
 | **Linux** | libhidapi | `sudo apt install libhidapi-hidraw0 libhidapi-dev` |
 | **Linux** | espeak (TTS) | `sudo apt install espeak` |
 
 ### Linux USB Permissions
 
-The launcher script auto-configures this, but for manual setup:
+The launcher script auto-configures this. For manual setup:
 
 ```bash
-# Create udev rule for Tux Droid dongle
+# Create udev rule
 sudo bash -c 'cat > /etc/udev/rules.d/99-tuxdroid.rules << EOF
 SUBSYSTEM=="usb", ATTR{idVendor}=="03eb", ATTR{idProduct}=="ff07", MODE="0666", GROUP="plugdev"
 KERNEL=="hidraw*", ATTR{idVendor}=="03eb", ATTR{idProduct}=="ff07", MODE="0666", GROUP="plugdev"
 EOF'
 
-# Reload rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
-
-# Add user to plugdev group
 sudo usermod -aG plugdev $USER
-
 # Log out and back in
 ```
+
+---
+
+## 🎬 First Run
+
+1. **Plug in** the Tux Droid USB dongle.
+2. **Run** `START_WINDOWS.bat` (Windows) or `./START_LINUX.sh` (Linux).
+3. **Choose** from the main menu:
+   - `1` — Interactive Menu (browse and run 100 combos)
+   - `2` — Manual/REPL Mode (type commands freely)
+   - `3` — Telegram Control (set up remote control)
+   - `4` — Exit
 
 ---
 
@@ -216,14 +174,6 @@ sudo usermod -aG plugdev $USER
 
 ```bash
 java -jar target/ScayTux.jar
-```
-
-```
-[ MAIN MENU ]
-1. Interactive Menu (Select combos by number)
-2. Manual / REPL Mode (Type commands freely)
-3. 📱 Telegram Control (Control via Telegram Bot)
-4. Exit
 ```
 
 ### Command-Line Mode
@@ -241,8 +191,11 @@ java -jar target/ScayTux.jar --say "Hello World"
 # Play music with dance
 java -jar target/ScayTux.jar --play assets/audio/billie.mp3
 
-# Run cinematic combo
-java -jar target/ScayTux.jar --combo 6
+# Run combo (1-100)
+java -jar target/ScayTux.jar --combo 14
+
+# List devices
+java -jar target/ScayTux.jar --list
 
 # Debug mode
 java -jar target/ScayTux.jar --debug
@@ -257,75 +210,108 @@ java -jar target/ScayTux.jar --debug
 | Flag | Description | Example |
 |------|-------------|---------|
 | `-i, --interactive` | Force interactive mode | `-i` |
-| `--flap` | Flap wings up and down | `--flap` |
+| `--flap` | Flap wings | `--flap` |
 | `--eyes <bool>` | Open (true) or close (false) eyes | `--eyes true` |
 | `--blink <n>` | Blink eyes N times | `--blink 5` |
-| `--mouth <bool>` | Open (true) or close (false) mouth | `--mouth true` |
+| `--mouth <bool>` | Open or close mouth | `--mouth true` |
 | `--talk <n>` | Move mouth N times | `--talk 10` |
 | `--spin <dir>` | Spin left or right | `--spin left` |
 | `--val <n>` | Duration/loops for spin | `--val 100` |
-| `--led <color>` | LED color (1=Red, 2=Blue, 3=Yellow) | `--led 2` |
+| `--led <color>` | LED: 1=Red, 2=Blue, 3=Yellow | `--led 2` |
 | `--intensity <n>` | LED intensity (0-255) | `--intensity 255` |
-| `--say <text>` | Speak text with TTS | `--say "Hello"` |
-| `--combo <id>` | Run combo (1-55) | `--combo 6` |
-| `--play <file>` | Play MP3 file | `--play song.mp3` |
-| `-l, --list` | Check device connection | `-l` |
-| `-d, --debug` | Debug HID input monitor | `-d` |
+| `--say <text>` | Speak with TTS | `--say "Hello"` |
+| `--combo <id>` | Run combo **1-100** | `--combo 49` |
+| `--play <file>` | Play MP3 and dance | `--play song.mp3` |
+| `-l, --list` | Check USB connection | `-l` |
+| `-d, --debug` | Debug HID monitor | `-d` |
+| `--spin-doctor` | Motor diagnostic | `--spin-doctor` |
 
-### Top 10 Cinematic Combos
+---
 
-| ID | Name | Description |
-|----|------|-------------|
-| 1 | Royal Entrance | "I have arrived." Slow eye open, blue light fade-in |
-| 2 | Bird Flex | Rapid wing flapping show-off |
-| 3 | Brain Loading | Thinking animation with red light pulsing |
-| 4 | Sleep Mode | Yawn, eyes close, lights out |
-| 5 | Hacker Alert | Emergency red strobe and panic spin |
-| 6 | Police Mode | Red/Blue siren + 360° spin × 3 |
-| 7 | Shy Bird | Whispers and hides eyes |
-| 8 | Laugh Mode | "Ha ha ha!" with happy movements |
-| 9 | Kiss 😘 | Smack sound + wink |
-| 10 | Bird Crying | Sad voice + dim blue light |
+## 🎭 100 Combos (Full List)
 
-> **Full list**: Run interactive mode and select "Show All 50 Combos"
+### Animation Combos (1-90)
 
-### Music Dancing Modes
+| ID | Name | ID | Name | ID | Name |
+|----|------|----|------|----|------|
+| 1 | Royal Entrance | 31 | Ninja Silent | 61 | Weatherman |
+| 2 | Bird Flex | 32 | Wake Ninja | 62 | Fitness Coach |
+| 3 | Brain Loading | 33 | JumpScare | 63 | Alarm Clock |
+| 4 | Sleep Mode | 34 | Sad Apology | 64 | Moonwalk |
+| 5 | Hacker Alert | 35 | Switch OFF | 65 | Karate Chop |
+| 6 | Police Mode | 36 | Magic Portal | 66 | News Anchor |
+| 7 | Shy Bird | 37 | Taunting | 67 | Evil Villain |
+| 8 | Laugh Mode | 38 | Game Won | 68 | Cheerleader |
+| 9 | Kiss | 39 | Game Lost | 69 | Ghostly Haunt |
+| 10 | Bird Crying | 40 | Loading 100% | 70 | Cowboy Duel |
+| ... | ... | ... | ... | ... | ... |
+| 51 | Disco Fever | 71 | Science Lab | 81 | Space Explorer |
+| 52 | Morning Stretch | 72 | Royal Wave | 82 | Chef Kiss |
+| 53 | Pirate Captain | 73 | Breakdance | 83 | Drill Sergeant |
+| 54 | Opera Singer | 74 | Sneezing Fit | 84 | Morse Code |
+| 55 | Counting Sheep | 75 | Photo Pose | 85 | Surfer Dude |
+| 56 | Thunder Storm | 76 | Hypnotize | 86 | Orchestra Conductor |
+| 57 | Zen Meditation | 77 | Traffic Cop | 87 | Spy Mode |
+| 58 | Rocket Launch | 78 | Submarine | 88 | Fortune Teller |
+| 59 | Penguin Walk | 79 | Birthday Party | 89 | Heavyweight Champ |
+| 60 | Time Bomb | 80 | Mime Artist | 90 | Penguin Shuffle |
 
-| ID | Mode | Song |
-|----|------|------|
-| 51 | Michael Jackson | Billie Jean (2 min) |
-| 52 | Chicken Dance | Chicken Song (2 min) |
-| 53 | Suirian Dabkah | Traditional Dance (2 min) |
-| 54 | Crazy Mode | Crazy Song (2 min) |
-| 55 | Say My Name | Say My Name (2 min) |
+> **Browse all 100**: Run interactive mode → "Show All 100 Combos" • Or visit [tuxdroid.com/docs/combos](https://tuxdroid.com/docs/combos)
+
+### Music + Dance Combos (91-100)
+
+| ID | Name | Song File |
+|----|------|-----------|
+| 91 | Michael Jackson | billie.mp3 |
+| 92 | Chicken Dance | chicken.mp3 |
+| 93 | Syrian Dabkah | Suirian dabkah.mp3 |
+| 94 | Crazy Mode | crazy.mp3 |
+| 95 | Say My Name | Say My Name.mp3 |
+| 96 | Robot Rock | robot-rock.mp3 *(add to assets/audio/)* |
+| 97 | Macarena | macarena.mp3 *(add to assets/audio/)* |
+| 98 | Egyptian Walk | egyptian.mp3 *(add to assets/audio/)* |
+| 99 | Cha Cha Slide | cha-cha.mp3 *(add to assets/audio/)* |
+| 100 | Tux Anthem | tux-anthem.mp3 *(add to assets/audio/)* |
+
+Place MP3 files in `assets/audio/` to enable music combos 91-100.
 
 ---
 
 ## 📱 Telegram Remote Control
 
-Control your Tux Droid from anywhere with Telegram!
+Control your Tux Droid from anywhere!
 
-### Setup
+### Setup (Step by Step)
 
-1. **Create Bot**: Message [@BotFather](https://t.me/BotFather) → `/newbot` → Copy token
-2. **Get Chat ID**: Message [@userinfobot](https://t.me/userinfobot) → `/start` → Copy ID
-3. **Configure**: Run ScayTux → `📱 Telegram Control` → `📝 Configure Bot`
-4. **Start**: Select `▶️ Start Bot`
+1. **Create Bot**: Message [@BotFather](https://t.me/BotFather) on Telegram → `/newbot` → Follow prompts → Copy the **bot token**.
+2. **Get Chat ID**: Message [@userinfobot](https://t.me/userinfobot) → `/start` → Copy your **Chat ID**.
+3. **Configure ScayTux**:
+   - Copy `telegram_config.example.json` to `telegram_config.json`
+   - Edit `telegram_config.json` and add your `botToken` and `chatId`
+   - Or run ScayTux → `3. Telegram Control` → `1. Configure Bot` and enter them interactively
+4. **Start Bot**: Run ScayTux → `3. Telegram Control` → `2. Start Bot`
 
 ### Bot Commands
 
 | Command | Description |
 |---------|-------------|
-| `/start` | Show main menu with buttons |
+| `/start` | Show main menu |
 | `/connect` | Connect to Tux Droid |
 | `/flap` | Flap wings |
 | `/blink` | Blink eyes |
-| `/spin_left` | Spin left |
-| `/spin_right` | Spin right |
 | `/dance` | Dance animation |
 | `/say <text>` | Make Tux speak |
-| `/combo_<n>` | Run combo (1-55) |
+| `/combo1` to `/combo100` | Run any combo |
 | `/stop` | Stop music |
+
+---
+
+## 🗣️ Text-to-Speech & Audio
+
+- **Windows**: Uses PowerShell (native SAPI voice)
+- **Linux**: Uses espeak (`sudo apt install espeak`)
+- **Voices**: NORMAL, WHISPER, ANGRY, SAD, CUTE, ROBOT, ANNOUNCER
+- **Audio**: MP3 playback via JLayer; place files in `assets/audio/`
 
 ---
 
@@ -333,60 +319,57 @@ Control your Tux Droid from anywhere with Telegram!
 
 ```
 ScayTux/
-├── 📄 START_WINDOWS.bat          # Windows one-click launcher
-├── 📄 START_LINUX.sh             # Linux one-click launcher
-├── 📄 pom.xml                    # Maven build configuration
-├── 📄 telegram_config.json       # Telegram bot configuration
+├── START_WINDOWS.bat         # Windows launcher
+├── START_LINUX.sh            # Linux launcher
+├── pom.xml                   # Maven config
+├── telegram_config.example.json  # Template (copy to telegram_config.json)
+├── telegram_config.json      # Your config (gitignored - add token here)
 │
-├── 📂 src/main/java/com/kowalski7cc/jtuxdriver/
-│   ├── 📂 cli/
-│   │   ├── Main.java             # Entry point & CLI parser
-│   │   ├── InteractiveMode.java  # Interactive menu system
-│   │   └── Debug.java            # Debug utilities
-│   │
-│   ├── 📂 core/
-│   │   ├── HidTransport.java     # USB HID communication (hid4java)
-│   │   └── UsbTransport.java     # Transport interface
-│   │
-│   ├── 📂 telegram/
-│   │   ├── TelegramController.java # Bot command handler
-│   │   └── TelegramManager.java    # Bot lifecycle manager
-│   │
-│   ├── TuxDroid.java             # High-level Tux control API
-│   ├── TuxCombos.java            # 55 cinematic animations
-│   ├── Command.java              # USB packet factory
-│   ├── AudioPlayer.java          # Cross-platform MP3 player
-│   ├── TTS.java                  # Text-to-Speech engine
-│   ├── TuxInput.java             # Button input handler
-│   └── USBDefines.java           # USB constants
+├── src/main/java/.../jtuxdriver/
+│   ├── cli/                  # Main, InteractiveMode, Debug
+│   ├── core/                 # HidTransport, UsbTransport
+│   ├── telegram/             # TelegramController, TelegramManager
+│   ├── TuxDroid.java         # Tux control API
+│   ├── TuxCombos.java        # 100 combo implementations
+│   ├── Command.java          # USB packet factory
+│   ├── AudioPlayer.java      # MP3 player
+│   ├── TTS.java              # Text-to-Speech
+│   └── USBDefines.java       # USB constants
 │
-├── 📂 assets/audio/              # MP3 files for dancing
-│   ├── billie.mp3
-│   ├── chicken.mp3
-│   ├── crazy.mp3
-│   ├── Say My Name.mp3
-│   └── Suirian dabkah.mp3
-│
-├── 📂 docs/
-│   ├── COMMAND_REFERENCE.md      # Full command documentation
-│   └── LICENSE                   # LGPL-3.0 License
-│
-└── 📂 target/
-    └── ScayTux.jar               # Compiled fat JAR
+├── assets/audio/             # MP3 files (billie.mp3, chicken.mp3, etc.)
+├── docs/                     # COMMAND_REFERENCE.md, LICENSE
+└── website/                  # Tuxdroid.com (Next.js)
+    ├── src/app/              # Pages
+    ├── src/components/      # UI components
+    └── public/images/       # Logo, assets
+```
+
+---
+
+## 🔨 Manual Build
+
+```bash
+# Build JAR
+mvn clean package -DskipTests
+
+# Run
+java -jar target/ScayTux.jar
+
+# Run with options
+java -jar target/ScayTux.jar --combo 14 --say "Hello"
 ```
 
 ---
 
 ## 📦 Dependencies
 
-| Library | Version | Purpose |
-|---------|---------|---------|
-| [hid4java](https://github.com/gary-rowe/hid4java) | 0.8.0 | USB HID communication |
-| [Picocli](https://picocli.info/) | 4.7.5 | CLI argument parsing |
-| [JLayer](http://www.javazoom.net/javalayer/javalayer.html) | 1.0.1 | MP3 decoding |
-| [TelegramBots](https://github.com/rubenlagus/TelegramBots) | 6.8.0 | Telegram Bot API |
-| [Gson](https://github.com/google/gson) | 2.10.1 | JSON configuration |
-| [JUnit 5](https://junit.org/junit5/) | 5.10.0 | Unit testing |
+| Library | Purpose |
+|---------|---------|
+| [hid4java](https://github.com/gary-rowe/hid4java) | USB HID |
+| [Picocli](https://picocli.info/) | CLI parsing |
+| [JLayer](http://www.javazoom.net/javalayer/) | MP3 |
+| [TelegramBots](https://github.com/rubenlagus/TelegramBots) | Telegram API |
+| [Gson](https://github.com/google/gson) | JSON config |
 
 ---
 
@@ -397,55 +380,47 @@ ScayTux/
 | Issue | Solution |
 |-------|----------|
 | "Java is not installed" | Download from [Adoptium](https://adoptium.net/) |
-| "Build failed" | Delete `target/` folder and retry |
-| "Device not found" | Try different USB port |
-| No audio from Tux | Check Windows sound mixer for "TuxDroid-Audio" |
+| "Build failed" | Delete `target/` and retry |
+| "Device not found" | Try different USB port; replug dongle |
+| No audio from Tux | Check Windows mixer for "TuxDroid-Audio" |
 
 ### Linux
 
 | Issue | Solution |
 |-------|----------|
-| "Permission denied" for USB | Run launcher script (auto-configures udev rules) |
+| USB "Permission denied" | Run launcher (auto udev) or add udev rules manually |
 | "espeak not found" | `sudo apt install espeak` |
 | "libhidapi not found" | `sudo apt install libhidapi-hidraw0 libhidapi-dev` |
-| Need to logout | Group membership requires re-login |
 
 ### Common
 
 | Issue | Solution |
 |-------|----------|
-| Tux not responding | 1. Unplug dongle 2. Wait 5s 3. Replug |
-| Spin stutters | Increase `--val` value (try 100+) |
-| TTS sounds robotic | Expected on Linux (espeak), Windows uses native |
+| Tux not responding | Unplug → wait 5s → replug |
+| Spin stutters | Use `--val 100` or higher |
+| Telegram bot not connecting | Check token, chat ID, internet, firewall |
+
+**More help**: [tuxdroid.com/docs/troubleshooting](https://tuxdroid.com/docs/troubleshooting)
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
+1. Fork the repository
+2. Create a branch (`git checkout -b feature/amazing`)
+3. Commit (`git commit -m 'Add amazing feature'`)
+4. Push (`git push origin feature/amazing`)
+5. Open a Pull Request
 
 ---
 
 ## 👨‍💻 Author
 
-<p align="center">
-  <a href="https://github.com/Scayar">
-    <img src="https://img.shields.io/badge/Developed%20by-Scayar-cyan?style=for-the-badge&logo=github" alt="Scayar">
-  </a>
-</p>
-
 | | |
 |---|---|
 | **Name** | Scayar |
 | **GitHub** | [github.com/Scayar](https://github.com/Scayar) |
-| **Email** | Scayar.exe@gmail.com |
-| **Website** | [Scayar.com](https://Scayar.com) |
+| **Website** | [Tuxdroid.com](https://tuxdroid.com) |
 | **Telegram** | [@im_scayar](https://t.me/im_scayar) |
 | **Support** | [Buy Me a Coffee ☕](https://buymeacoffee.com/scayar) |
 
@@ -453,18 +428,16 @@ Contributions are welcome! Feel free to:
 
 ## ❤️ Support
 
-If you like this project, please:
-
 - ⭐ **Star** this repository
-- 🍕 [**Buy me a coffee**](https://buymeacoffee.com/scayar)
+- ☕ [**Buy me a coffee**](https://buymeacoffee.com/scayar)
 - 📢 **Share** with other Tux Droid owners
-- 🐛 **Report bugs** via GitHub Issues
+- 🐛 **Report bugs** via [GitHub Issues](https://github.com/Scayar/ScayTux/issues)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **GNU Lesser General Public License v3.0** - see the [LICENSE](docs/LICENSE) file for details.
+**GNU Lesser General Public License v3.0 (LGPL-3.0)** — see [docs/LICENSE](docs/LICENSE).
 
 ---
 

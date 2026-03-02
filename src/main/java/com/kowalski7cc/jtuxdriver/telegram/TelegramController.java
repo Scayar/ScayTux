@@ -112,6 +112,18 @@ public class TelegramController extends TelegramLongPollingBot {
                 editMessageWithCombosMenu3(chatId, messageId);
                 return;
             }
+            if (data.equals("menu_combos4")) {
+                editMessageWithCombosMenu4(chatId, messageId);
+                return;
+            }
+            if (data.equals("menu_combos5")) {
+                editMessageWithCombosMenu5(chatId, messageId);
+                return;
+            }
+            if (data.equals("menu_combos6")) {
+                editMessageWithCombosMenu6(chatId, messageId);
+                return;
+            }
 
             // Connection actions
             if (data.equals("action_connect")) {
@@ -285,7 +297,7 @@ public class TelegramController extends TelegramLongPollingBot {
             sendMusicMenu(chatId);
             return;
         }
-        if (cmd.equals("/stopmusicкие") || cmd.equals("/stop") || cmd.equals("stop")) {
+        if (cmd.equals("/stopmusic") || cmd.equals("/stop") || cmd.equals("stop")) {
             stopMusic(chatId);
             return;
         }
@@ -295,14 +307,14 @@ public class TelegramController extends TelegramLongPollingBot {
             String numStr = cmd.replace("/combo", "").replace("combo", "").trim();
             try {
                 int comboId = Integer.parseInt(numStr);
-                if (comboId >= 1 && comboId <= 55) {
+                if (comboId >= 1 && comboId <= 100) {
                     String comboName = getComboName(comboId);
                     executeAction(chatId, "🎭 Running: " + comboName + "...", () -> combos.runCombo(comboId));
                 } else {
-                    sendMessage(chatId, "❌ Combo ID must be 1-55");
+                    sendMessage(chatId, "❌ Combo ID must be 1-100");
                 }
             } catch (NumberFormatException e) {
-                sendMessage(chatId, "❌ Usage: /combo1 to /combo55");
+                sendMessage(chatId, "❌ Usage: /combo1 to /combo100");
             }
             return;
         }
@@ -666,7 +678,7 @@ public class TelegramController extends TelegramLongPollingBot {
         // Navigation
         List<InlineKeyboardButton> rowNav = new ArrayList<>();
         rowNav.add(createButton("⬅️ (1-10)", "menu_combos"));
-        rowNav.add(createButton("➡️ (31-52)", "menu_combos3"));
+        rowNav.add(createButton("➡️ (31-50)", "menu_combos3"));
         rows.add(rowNav);
 
         // Back button
@@ -679,7 +691,7 @@ public class TelegramController extends TelegramLongPollingBot {
     }
 
     private void editMessageWithCombosMenu3(String chatId, Integer messageId) {
-        String text = "🎭 *Combos (31-52)*\n\n" +
+        String text = "🎭 *Combos (31-50)*\n\n" +
                      "Select a combo to run:";
 
         EditMessageText editMessage = new EditMessageText();
@@ -700,7 +712,6 @@ public class TelegramController extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Combos 31-50 (2 per row) - Skip 51 and 52 (music combos)
         for (int i = 31; i <= 50; i += 2) {
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(createButton(i + ". " + getShortComboName(i), "combo_" + i));
@@ -713,6 +724,7 @@ public class TelegramController extends TelegramLongPollingBot {
         // Navigation
         List<InlineKeyboardButton> rowNav = new ArrayList<>();
         rowNav.add(createButton("⬅️ (11-30)", "menu_combos2"));
+        rowNav.add(createButton("➡️ (51-70)", "menu_combos4"));
         rows.add(rowNav);
 
         // Back button
@@ -720,6 +732,58 @@ public class TelegramController extends TelegramLongPollingBot {
         rowBack.add(createButton("🏠 Main Menu", "menu_main"));
         rows.add(rowBack);
 
+        markup.setKeyboard(rows);
+        return markup;
+    }
+
+    private void editMessageWithCombosMenu4(String chatId, Integer messageId) {
+        EditMessageText editMessage = new EditMessageText();
+        editMessage.setChatId(chatId);
+        editMessage.setMessageId(messageId);
+        editMessage.setText("🎭 *Combos (51-70)*\n\nSelect a combo to run:");
+        editMessage.setParseMode("Markdown");
+        editMessage.setReplyMarkup(createCombosKeyboardRange(51, 70, "menu_combos3", "menu_combos5"));
+        try { execute(editMessage); } catch (TelegramApiException e) { e.printStackTrace(); }
+    }
+
+    private void editMessageWithCombosMenu5(String chatId, Integer messageId) {
+        EditMessageText editMessage = new EditMessageText();
+        editMessage.setChatId(chatId);
+        editMessage.setMessageId(messageId);
+        editMessage.setText("🎭 *Combos (71-90)*\n\nSelect a combo to run:");
+        editMessage.setParseMode("Markdown");
+        editMessage.setReplyMarkup(createCombosKeyboardRange(71, 90, "menu_combos4", "menu_combos6"));
+        try { execute(editMessage); } catch (TelegramApiException e) { e.printStackTrace(); }
+    }
+
+    private void editMessageWithCombosMenu6(String chatId, Integer messageId) {
+        EditMessageText editMessage = new EditMessageText();
+        editMessage.setChatId(chatId);
+        editMessage.setMessageId(messageId);
+        editMessage.setText("🎭 *Music Combos (91-100)*\n\nSelect a combo to run:");
+        editMessage.setParseMode("Markdown");
+        editMessage.setReplyMarkup(createCombosKeyboardRange(91, 100, "menu_combos5", null));
+        try { execute(editMessage); } catch (TelegramApiException e) { e.printStackTrace(); }
+    }
+
+    private InlineKeyboardMarkup createCombosKeyboardRange(int start, int end, String backNav, String forwardNav) {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        for (int i = start; i <= end; i += 2) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(createButton(i + ". " + getShortComboName(i), "combo_" + i));
+            if (i + 1 <= end) {
+                row.add(createButton((i+1) + ". " + getShortComboName(i+1), "combo_" + (i+1)));
+            }
+            rows.add(row);
+        }
+        List<InlineKeyboardButton> rowNav = new ArrayList<>();
+        if (backNav != null) rowNav.add(createButton("⬅️ Back", backNav));
+        if (forwardNav != null) rowNav.add(createButton("➡️ Next", forwardNav));
+        if (!rowNav.isEmpty()) rows.add(rowNav);
+        List<InlineKeyboardButton> rowBack = new ArrayList<>();
+        rowBack.add(createButton("🏠 Main Menu", "menu_main"));
+        rows.add(rowBack);
         markup.setKeyboard(rows);
         return markup;
     }
@@ -812,7 +876,7 @@ public class TelegramController extends TelegramLongPollingBot {
             "`/connect` - Connect to Tux\n" +
             "`/flap` - Flap wings\n" +
             "`/dance` - Dance!\n" +
-            "`/combo1` to `/combo50` - Run combo\n" +
+            "`/combo1` to `/combo100` - Run combo\n" +
             "`/say Hello` - Make Tux speak\n" +
             "`/stop` - Stop music\n\n" +
             "_Made with ♥ by Scayar_";
@@ -895,11 +959,56 @@ public class TelegramController extends TelegramLongPollingBot {
             case 48: return "Cyber Knight";
             case 49: return "DJ Mode";
             case 50: return "Grand Close";
-            case 51: return "Michael Jackson";
-            case 52: return "Chicken Dance";
-            case 53: return "Suirian Dabkah";
-            case 54: return "Crazy";
-            case 55: return "Say My Name";
+            case 51: return "Disco Fever";
+            case 52: return "Morning Stretch";
+            case 53: return "Pirate Captain";
+            case 54: return "Opera Singer";
+            case 55: return "Counting Sheep";
+            case 56: return "Thunder Storm";
+            case 57: return "Zen Meditation";
+            case 58: return "Rocket Launch";
+            case 59: return "Penguin Walk";
+            case 60: return "Time Bomb";
+            case 61: return "Weatherman";
+            case 62: return "Fitness Coach";
+            case 63: return "Alarm Clock";
+            case 64: return "Moonwalk";
+            case 65: return "Karate Chop";
+            case 66: return "News Anchor";
+            case 67: return "Evil Villain";
+            case 68: return "Cheerleader";
+            case 69: return "Ghostly Haunt";
+            case 70: return "Cowboy Duel";
+            case 71: return "Science Lab";
+            case 72: return "Royal Wave";
+            case 73: return "Breakdance";
+            case 74: return "Sneezing Fit";
+            case 75: return "Photo Pose";
+            case 76: return "Hypnotize";
+            case 77: return "Traffic Cop";
+            case 78: return "Submarine";
+            case 79: return "Birthday Party";
+            case 80: return "Mime Artist";
+            case 81: return "Space Explorer";
+            case 82: return "Chef Kiss";
+            case 83: return "Drill Sergeant";
+            case 84: return "Morse Code";
+            case 85: return "Surfer Dude";
+            case 86: return "Orchestra";
+            case 87: return "Spy Mode";
+            case 88: return "Fortune Teller";
+            case 89: return "Heavyweight";
+            case 90: return "Penguin Shuffle";
+            case 91: return "Michael Jackson";
+            case 92: return "Chicken Dance";
+            case 93: return "Syrian Dabkah";
+            case 94: return "Crazy Mode";
+            case 95: return "Say My Name";
+            case 96: return "Robot Rock";
+            case 97: return "Macarena";
+            case 98: return "Egyptian Walk";
+            case 99: return "Cha Cha Slide";
+            case 100: return "Tux Anthem";
             default: return "Combo " + id;
         }
     }

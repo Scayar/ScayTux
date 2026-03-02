@@ -75,7 +75,7 @@ public class Main implements Callable<Integer> {
     @Option(names = { "--say" }, description = "Speak text using TTS")
     String sayText;
 
-    @Option(names = { "--combo" }, description = "Run a combo (1-20)")
+    @Option(names = { "--combo" }, description = "Run a combo (1-100)")
     Integer comboId;
 
     @Option(names = { "--play" }, description = "Play MP3 file and dance")

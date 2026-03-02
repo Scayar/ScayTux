@@ -103,9 +103,9 @@ public class TTS {
             return;
         }
 
-        // Build espeak command
         String device = System.getProperty("tux.audio.dev");
-        String espeakCmd = String.format("espeak -v en %s \"%s\"", voice.args, text.replace("\"", "\\\""));
+        String voiceArgs = (voice.args != null && !voice.args.isEmpty()) ? " " + voice.args : "";
+        String espeakCmd = String.format("espeak -v en%s \"%s\"", voiceArgs, text.replace("\"", "\\\""));
 
         ProcessBuilder pb;
         if (device != null && !device.isEmpty() && !device.equals("default")) {

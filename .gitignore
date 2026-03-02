@@ -50,3 +50,18 @@ windows-version/*.class
 
 # Audio test files (keep originals in assets/)
 windows-version/*.mp3
+
+# Telegram config (contains bot token - use telegram_config.example.json as template)
+telegram_config.json
+
+# Website
+website/node_modules/
+website/.next/
+website/out/
+
+# Local / IDE
+.cursor/
+*.local
+.env
+.env.local
+.env*.local

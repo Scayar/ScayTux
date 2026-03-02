@@ -4,6 +4,8 @@ import org.hid4java.HidDevice;
 import org.hid4java.HidManager;
 import org.hid4java.HidServices;
 
+import com.kowalski7cc.jtuxdriver.USBDefines;
+
 /**
  * Debug utility to list all HID devices seen by hid4java.
  */
@@ -38,9 +40,8 @@ public class Debug {
                 System.out.println("Total: " + count + " HID device(s) found.");
             }
 
-            // Specific check for Tux Droid
-            System.out.println("\n--- Checking for Tux Droid (03eb:ff07) ---");
-            HidDevice tux = hidServices.getHidDevice(0x03eb, 0xff07, null);
+            System.out.println(String.format("\n--- Checking for Tux Droid (%04x:%04x) ---", USBDefines.VID, USBDefines.PID));
+            HidDevice tux = hidServices.getHidDevice(USBDefines.VID, USBDefines.PID, null);
             if (tux != null) {
                 System.out.println("FOUND: " + tux.getProduct());
             } else {
