@@ -55,7 +55,13 @@
 
 **ScayTux** is a modern, cross-platform Java application that resurrects the classic **Tux Droid** robot for modern operating systems. No more outdated Python scripts or broken dependencies — pure Java power with 100 cinematic animations, Telegram bot, TTS, and a beautiful interactive CLI.
 
-**What is Tux Droid?** A Linux mascot robot from 2006 — a USB-connected penguin that moves eyes, beak, wings, and body. The original software is abandoned; ScayTux brings it back to life.
+**What is Tux Droid?** A Linux mascot robot from ~2007 — a wireless USB-connected penguin figure that spins, flaps wings, blinks LED eyes, and speaks. The original software is abandoned; ScayTux brings it back to life on modern systems.
+
+📚 **Learn more about Tux Droid:**
+- [Wikipedia: Tux Droid](https://en.wikipedia.org/wiki/Tux_Droid) — Overview, specs, history
+- [Ars Technica review (2008)](https://arstechnica.com/gadgets/2008/03/tux-droid-review/) — Make a penguin do your bidding
+- [LWN.net (2006)](https://lwn.net/Articles/195808/) — Tux Droid brings Tux the penguin alive
+- [eLinux.org](https://elinux.org/Tux_Droid) — Technical documentation
 
 ```
   ███████╗ ██████╗ █████╗ ██╗   ██╗████████╗██╗   ██╗██╗  ██╗
