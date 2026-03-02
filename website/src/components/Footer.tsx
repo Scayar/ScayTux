@@ -23,6 +23,7 @@ export function Footer() {
               <li><Link href="/getting-started" className="text-sm text-tux-subtle hover:text-tux-orange transition-colors duration-200">Getting Started</Link></li>
               <li><Link href="/download" className="text-sm text-tux-subtle hover:text-tux-orange transition-colors duration-200">Download</Link></li>
               <li><Link href="/docs" className="text-sm text-tux-subtle hover:text-tux-orange transition-colors duration-200">Documentation</Link></li>
+              <li><Link href="/commercial-license" className="text-sm text-tux-subtle hover:text-tux-orange transition-colors duration-200">Commercial License</Link></li>
             </ul>
           </div>
 
@@ -51,7 +52,7 @@ export function Footer() {
         </div>
 
         <div className="mt-14 pt-8 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-tux-subtle">&copy; {new Date().getFullYear()} ScayTux by Scayar. Licensed under LGPL-3.0.</p>
+          <p className="text-xs text-tux-subtle">&copy; {new Date().getFullYear()} ScayTux by Scayar. LGPL-3.0 for personal use. <Link href="/commercial-license" className="text-tux-orange hover:underline">Commercial license</Link> for businesses.</p>
           <p className="text-xs text-tux-subtle">&ldquo;Tux Droid Never Dies!&rdquo;</p>
         </div>
       </div>

@@ -115,12 +115,13 @@ export default function About() {
           <h2 className="text-2xl font-bold text-white mb-6">License</h2>
           <div className="card p-6">
             <p className="text-tux-muted leading-relaxed mb-4">
-              ScayTux is licensed under the <strong className="text-white">GNU Lesser General Public License v3.0</strong> (LGPL-3.0).
+              ScayTux is licensed under the <strong className="text-white">GNU Lesser General Public License v3.0</strong> (LGPL-3.0) for personal and educational use.
+            </p>
+            <p className="text-tux-muted leading-relaxed mb-4 text-sm">
+              Personal use is free. <strong className="text-white">Companies, stores, and businesses</strong> that want to use, promote, or bundle ScayTux on their websites or products must obtain a <Link href="/commercial-license" className="text-tux-orange hover:underline">Commercial License</Link>. Contact for pricing.
             </p>
             <p className="text-tux-muted leading-relaxed text-sm">
-              This means you are free to use, modify, and distribute this software. If you modify the library itself, 
-              you must share the changes under the same license. Applications that merely use the library are not 
-              required to be open-source.
+              See the full <Link href="/commercial-license" className="text-tux-orange hover:underline">Commercial License page</Link> for details.
             </p>
           </div>
         </section>

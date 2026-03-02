@@ -444,7 +444,8 @@ java -jar target/ScayTux.jar --combo 14 --say "Hello"
 
 ## 📄 License
 
-**GNU Lesser General Public License v3.0 (LGPL-3.0)** — see [docs/LICENSE](docs/LICENSE).
+- **Personal / Educational**: Free under **GNU Lesser General Public License v3.0** (LGPL-3.0)
+- **Commercial** (companies, stores, websites, marketing): **Commercial License required** — [Contact for pricing](https://tuxdroid.com/commercial-license)
 
 ---
 

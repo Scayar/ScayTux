@@ -11,6 +11,7 @@ const navLinks = [
   { href: '/docs', label: 'Documentation' },
   { href: '/download', label: 'Download' },
   { href: '/about', label: 'About' },
+  { href: '/commercial-license', label: 'Commercial License' },
 ];
 
 export function Navbar() {
