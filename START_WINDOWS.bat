@@ -73,23 +73,30 @@ echo.
 :: Create tools directory if it doesn't exist
 if not exist "tools" mkdir tools
 
-:: Download Maven using PowerShell
+:: Download Maven using PowerShell (robust: auto-detect extracted folder name)
 powershell -ExecutionPolicy Bypass -Command ^
     "$ProgressPreference = 'SilentlyContinue'; " ^
+    "Set-Location -LiteralPath '%~dp0'; " ^
     "$url = 'https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.zip'; " ^
     "$zip = 'tools\maven.zip'; " ^
     "Write-Host 'Downloading...'; " ^
-    "Invoke-WebRequest -Uri $url -OutFile $zip; " ^
+    "try { Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing } catch { Write-Host 'Download failed:'; $_; exit 1 }; " ^
     "Write-Host 'Extracting...'; " ^
     "Expand-Archive -Path $zip -DestinationPath 'tools' -Force; " ^
     "if (Test-Path 'tools\maven') { Remove-Item 'tools\maven' -Recurse -Force }; " ^
-    "Rename-Item 'tools\apache-maven-3.9.6' 'tools\maven'; " ^
-    "Remove-Item $zip; " ^
+    "$dir = Get-ChildItem -Path 'tools' -Directory | Where-Object { $_.Name -like 'apache-maven*' } | Select-Object -First 1; " ^
+    "if (-not $dir) { Write-Host 'ERROR: Extracted folder not found'; exit 1 }; " ^
+    "Rename-Item -LiteralPath $dir.FullName -NewName 'maven'; " ^
+    "Remove-Item $zip -Force; " ^
     "Write-Host 'Done!'"
 
 if not exist "tools\maven\bin\mvn.cmd" (
     echo %ESC%[91m[ERROR]%ESC%[0m Failed to download Maven!
-    echo Please check your internet connection and try again.
+    echo.
+    echo %ESC%[93mManual fix:%ESC%[0m
+    echo   1. Install Maven from https://maven.apache.org/download.cgi
+    echo   2. Or delete "tools" folder and run this script again
+    echo.
     pause
     exit /b 1
 )

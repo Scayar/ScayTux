@@ -386,6 +386,7 @@ java -jar target/ScayTux.jar --combo 14 --say "Hello"
 | Issue | Solution |
 |-------|----------|
 | "Java is not installed" | Download from [Adoptium](https://adoptium.net/) |
+| Maven download/rename fails | Delete `tools/` folder and retry, or [install Maven manually](https://maven.apache.org/download.cgi) |
 | "Build failed" | Delete `target/` and retry |
 | "Device not found" | Try different USB port; replug dongle |
 | No audio from Tux | Check Windows mixer for "TuxDroid-Audio" |
